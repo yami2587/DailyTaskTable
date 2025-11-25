@@ -16,4 +16,10 @@ class EmployeeTaskMain extends Model
         'status',
         'member_remark'
     ];
+
+    
+    public function taskMain()
+    {
+        return $this->belongsTo(TaskMain::class, 'task_main_id');
+    }
 }

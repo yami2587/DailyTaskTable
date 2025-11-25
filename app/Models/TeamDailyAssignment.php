@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
 
 class TeamDailyAssignment extends Model
@@ -14,12 +12,15 @@ class TeamDailyAssignment extends Model
         'client_id',
         'task_description',
         'leader_remark',
-        'member_update',
+        'member_remark',
+        'status',
+        'is_submitted',
         'is_completed',
         'completed_at'
     ];
 
     protected $casts = [
+        'is_submitted' => 'boolean',
         'is_completed' => 'boolean',
         'completed_at' => 'datetime'
     ];
@@ -27,5 +28,10 @@ class TeamDailyAssignment extends Model
     public function sheet()
     {
         return $this->belongsTo(TeamDailySheet::class, 'sheet_id');
+    }
+
+    public function client()
+    {
+        return $this->belongsTo(\App\Models\Client::class, 'client_id', 'client_id');
     }
 }

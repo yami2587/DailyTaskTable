@@ -5,53 +5,44 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-// login page (GET /login) - view provided earlier
-// Route::get('/login', function () {
-//     return view('auth.login');
-// })->name('login');
-
 Route::get('/login', function (Request $r) {
-
-    // 1) If URL has ?id=xxx
     if ($r->has('id')) {
-
         $emp = DB::table('employee_tbl')->where('emp_id', $r->id)->first();
-
         if ($emp) {
-            // store login session
             session([
                 'emp_id' => $emp->emp_id,
-                'emp_name' => $emp->emp_name
+                'emp_name' => $emp->emp_name,
+                'employee_name' => $emp->emp_name,
             ]);
-
             return redirect('/dashboard');
         }
-
         return redirect()->back()->with('success', 'Invalid Employee ID');
     }
-
-    // 2) Else show login screen
-    return view('auth.login', [
-        'msg' => session('success')
-    ]);
+    return view('auth.login', ['msg' => session('success')]);
 })->name('login');
 
-// protect dashboard and sheet routes with employee.auth middleware
 Route::middleware(['employee.auth'])->group(function () {
-
+    // Dashboard
     Route::get('/dashboard', [DailySheetController::class, 'dashboard'])->name('tasktable');
 
-    // Leader actions:
-    Route::post('/sheet/create', [DailySheetController::class, 'createSheet'])->name('sheet.create');
-    Route::post('/assign', [DailySheetController::class, 'assign'])->name('assign');
-    Route::post('/assignment/{assign}/update', [DailySheetController::class, 'updateAssignment'])->name('assign.update');
-    Route::post('/assignment/{assign}/delete', [DailySheetController::class, 'deleteAssignment'])->name('assign.delete');
+    // Leader actions
+    Route::post('/sheet/create', [DailySheetController::class, 'createSheet'])->name('sheet.create');           // normal form
+    Route::post('/assign', [DailySheetController::class, 'assign'])->name('assign');                             // AJAX + form
+    Route::post('/assign/{assign}', [DailySheetController::class, 'updateAssignment'])->name('assign.update');   // update (form)
+    Route::post('/assign/delete/{assign}', [DailySheetController::class, 'deleteAssignment'])->name('assign.delete'); // delete
 
-    // Member submit status
-    Route::post('/assignment/{assign}/submit', [DailySheetController::class, 'memberSubmit'])->name('assign.submit');
+    // Member submit (AJAX capable)
+    Route::post('/assign/submit/{assign}', [DailySheetController::class, 'memberSubmit'])->name('assign.submit');
 
-    // Save final day log (leader)
-    Route::post('/sheet/{sheet}/save-day', [DailySheetController::class, 'saveDayLog'])->name('sheet.save_day');
+    // Save today's target (AJAX) & finalize day (AJAX-capable)
+    Route::post('/sheet/save_day/{sheet}', [DailySheetController::class, 'saveDayLog'])->name('sheet.save_day');
+
+    // Unfreeze helper (leader only — testing)
+    Route::post('/sheet/unfreeze/{sheet}', [DailySheetController::class, 'unfreezeSheet'])->name('sheet.unfreeze');
+
+
+    // Leader personal member-style dashboard
+    Route::get('/dashboard/mine', [DailySheetController::class, 'myDashboard'])->name('dashboard.mine');
 });
 
 
@@ -59,19 +50,12 @@ Route::middleware(['employee.auth'])->group(function () {
 
 
 
+//////
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TodayTargetController;
 use App\Http\Controllers\TeamDailyLogController;
 use App\Http\Controllers\EmployeeDashboardController;
-
-
-//////
-// use Illuminate\Http\Request;
-// use Illuminate\Support\Facades\Route;
-// use App\Http\Controllers\DailySheetController;
-
-
 
 // Route::get('/login', function(Request $r){
 //     // If query has id, the middleware also handles it, but this page helps users enter id
@@ -83,14 +67,6 @@ use App\Http\Controllers\EmployeeDashboardController;
 //     Route::get('/dashboard', [DailySheetController::class,'dashboard'])->name('tasktable'); // main page
 //     // other protected routes...
 // });
-
-
-
-
-
-
-
-
 
 // Route::get('tasktable', [DailySheetController::class,'dashboard'])->name('tasktable');
 
@@ -107,17 +83,7 @@ use App\Http\Controllers\EmployeeDashboardController;
 // // Targets
 // Route::post('tasktable/sheet/{sheet}/targets', [DailySheetController::class,'updateTargets'])->name('targets.update');
 
-
-
-
 // ////////////////////////
-
-
-
-
-// Route::get('/', function () {
-//     return redirect()->route('daily-logs.index');
-// });
 
 ////////////
 // main parts
@@ -136,8 +102,6 @@ use App\Http\Controllers\EmployeeDashboardController;
 // Route::post('tasktable/sheet/{sheet}/update-header', [EmployeeDashboardController::class,'updateSheetHeader'])->name('tasktable.sheet.update_header');
 
 
-
-
 // Teams (with member management)
 Route::resource('team', TeamController::class);
 
@@ -147,7 +111,6 @@ Route::post('team/{team}/members', [TeamController::class, 'addMember'])->name('
 Route::delete('team/{team}/members/{member}', [TeamController::class, 'removeMember'])->name('team.members.remove');
 
 // Tasks
-// Route::resource('tasks', TaskController::class);
 
 // Today Targets
 Route::resource('targets', TodayTargetController::class);

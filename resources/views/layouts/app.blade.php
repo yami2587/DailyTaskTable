@@ -99,11 +99,11 @@
     <div class="navbar">
         <h1>TaskTable Admin</h1>
         <div>
-            <a href="/" class="btn">Dashboard</a>
+            <a href="/dashboard" class="btn">Dashboard</a>
             <a href="/team" class="btn">Teams</a>
             <a href="/tasks" class="btn">Tasks</a>
             <a href="/daily-logs" class="btn">Daily Logs</a>
-            <a href="/targets" class="btn">Targets</a>
+            {{-- <a href="/targets" class="btn">Targets</a> --}}
         </div>
     </div>
 

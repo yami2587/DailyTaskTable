@@ -17,7 +17,7 @@ class DailySheetController extends Controller
     public function dashboard(Request $r)
     {
         $empId = session('emp_id');
-        $employeeName = session('employee_name') ?? session('emp_name') ?? null;
+        $employeeName = session('employee_name') ?? null;
         $date = $r->date ?? date('Y-m-d');
 
         // is leader?
@@ -47,10 +47,12 @@ class DailySheetController extends Controller
                 ->where('sheet_date', $date)
                 ->first();
 
+            // assignments for this member for that sheet
             $assignments = TeamDailyAssignment::where('member_emp_id', $empId)
                 ->where('sheet_id', $sheet->id ?? 0)
                 ->get();
 
+            // determine finalized: TaskMain exists for this team & date
             $isFinalized = $sheet
                 ? TaskMain::where('team_id', $sheet->team_id)->where('sheet_date', $sheet->sheet_date)->exists()
                 : false;
@@ -82,12 +84,13 @@ class DailySheetController extends Controller
             ]);
         }
 
-        // load members (with employee relation)
+        // load members with employee relation
         $members = TeamMember::with('employee')->where('team_id', $teamLeader->team_id)->get();
 
-        // assignments for sheet
+        // assignments for this sheet
         $assignments = TeamDailyAssignment::where('sheet_id', $sheet->id)->get();
 
+        // finalized check (TaskMain exists)
         $isFinalized = TaskMain::where('team_id', $sheet->team_id)
             ->where('sheet_date', $sheet->sheet_date)
             ->exists();
@@ -105,40 +108,6 @@ class DailySheetController extends Controller
         ]);
     }
 
-    public function myDashboard(Request $r)
-    {
-        // Leader wants to view his personal member-style dashboard (for submitting his own assignments)
-        $empId = session('emp_id');
-        $employeeName = session('employee_name') ?? session('emp_name') ?? null;
-        $date = $r->date ?? date('Y-m-d');
-
-        // find sheet for leader's team
-        $member = TeamMember::where('emp_id', $empId)->first();
-        $sheet = null;
-        if ($member) {
-            $sheet = TeamDailySheet::where('team_id', $member->team_id)->where('sheet_date', $date)->first();
-        }
-
-        $clients = Client::orderBy('client_company_name')->get();
-        $assignments = TeamDailyAssignment::where('member_emp_id', $empId)
-            ->where('sheet_id', $sheet->id ?? 0)
-            ->get();
-
-        $isFinalized = $sheet ? TaskMain::where('team_id', $sheet->team_id)->where('sheet_date', $sheet->sheet_date)->exists() : false;
-
-        return view('dashboard.sheet', [
-            'empId' => $empId,
-            'employeeName' => $employeeName,
-            'date' => $date,
-            'sheet' => $sheet,
-            'assignments' => $assignments,
-            'members' => collect(),
-            'clients' => $clients,
-            'isLeader' => false,
-            'isFinalized' => $isFinalized
-        ]);
-    }
-
     public function createSheet(Request $request)
     {
         $data = $request->validate([
@@ -147,7 +116,7 @@ class DailySheetController extends Controller
             'leader_emp_id' => 'required|string',
         ]);
 
-        TeamDailySheet::firstOrCreate(
+        $sheet = TeamDailySheet::firstOrCreate(
             ['team_id' => $data['team_id'], 'sheet_date' => $data['sheet_date']],
             ['leader_emp_id' => $data['leader_emp_id'], 'target_text' => '']
         );
@@ -155,7 +124,7 @@ class DailySheetController extends Controller
         return back()->with('success', 'Sheet created.');
     }
 
-    // ASSIGN (leader adds assignments) - supports AJAX return
+    // assign: allows fetch POST. returns JSON for AJAX, or redirect for normal requests
     public function assign(Request $request)
     {
         $data = $request->validate([
@@ -185,6 +154,7 @@ class DailySheetController extends Controller
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json(['ok' => true, 'id' => $assign->id], 200);
         }
+
         return back()->with('success', 'Assigned.');
     }
 
@@ -195,7 +165,7 @@ class DailySheetController extends Controller
             return back()->with('error', 'Past sheets locked.');
         }
 
-        $assign->update($request->only(['client_id', 'task_description', 'leader_remark', 'member_remark']));
+        $assign->update($request->only(['client_id', 'task_description', 'leader_remark']));
         return back()->with('success', 'Updated.');
     }
 
@@ -205,12 +175,11 @@ class DailySheetController extends Controller
         if ($sheet->sheet_date < Carbon::today()) {
             return back()->with('error', 'Past sheets locked.');
         }
-
         $assign->delete();
         return back()->with('success', 'Deleted.');
     }
 
-    // MEMBER SUBMIT (AJAX-capable). On success UI should switch to static view (handled client-side).
+    // Member submit - supports AJAX; returns JSON when AJAX to let client convert UI to static.
     public function memberSubmit(Request $request, TeamDailyAssignment $assign)
     {
         $sheet = $assign->sheet;
@@ -236,23 +205,13 @@ class DailySheetController extends Controller
         return back()->with('success', 'Submitted.');
     }
 
-    // SAVE DAY LOG (also used to save today's target only). Returns JSON for AJAX.
+    // Save final day log: create TaskMain and EmployeeTaskMain. After this TaskMain exists => finalized.
     public function saveDayLog(Request $request, TeamDailySheet $sheet)
     {
         if ($sheet->sheet_date < Carbon::today()) {
             return $request->wantsJson() ? response()->json(['error' => 'Past sheets locked'], 422) : back()->with('error', 'Past sheets locked.');
         }
 
-        // If request contains today_target -> update only target_text and return (used by Save Target)
-        if ($request->has('today_target') && !$request->has('finalize')) {
-            $sheet->update(['target_text' => $request->input('today_target')]);
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['ok' => true], 200);
-            }
-            return back()->with('success', 'Target saved.');
-        }
-
-        // Finalize snapshot: create TaskMain and EmployeeTaskMain
         $taskMain = TaskMain::create([
             'team_id' => $sheet->team_id,
             'sheet_date' => $sheet->sheet_date,
@@ -261,6 +220,7 @@ class DailySheetController extends Controller
             'day_remark' => null
         ]);
 
+        // copy assignments snapshot
         foreach ($sheet->assignments as $a) {
             EmployeeTaskMain::create([
                 'task_main_id' => $taskMain->id,
@@ -278,30 +238,5 @@ class DailySheetController extends Controller
         }
 
         return back()->with('success', 'Day log saved.');
-    }
-    /**
-     * Unfreeze a finalized sheet (testing helper).
-     * Deletes TaskMain row(s) for that team+date so sheet becomes editable again.
-     * Only Leader should access this — controller route is protected by employee.auth.
-     */
-    public function unfreezeSheet(Request $request, TeamDailySheet $sheet)
-    {
-        // Only allow leader to unfreeze their own sheet
-        $empId = session('emp_id');
-        if ($sheet->leader_emp_id != $empId) {
-            return response()->json(['error' => 'Forbidden'], 403);
-        }
-
-        // Delete TaskMain snapshot(s) for that team & date
-        TaskMain::where('team_id', $sheet->team_id)
-            ->where('sheet_date', $sheet->sheet_date)
-            ->delete();
-
-        // You could also delete related EmployeeTaskMain rows if you created them earlier.
-        EmployeeTaskMain::whereHas('taskMain', function ($q) use ($sheet) {
-            $q->where('team_id', $sheet->team_id)->where('sheet_date', $sheet->sheet_date);
-        })->delete();
-
-        return response()->json(['ok' => true], 200);
     }
 }
