@@ -34,12 +34,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <style>
-        /* Keep styling compact and close to your original */
+        /* =============== MAIN LAYOUT =============== */
         .container-sheet {
             display: flex;
             gap: 20px;
             margin-top: 18px;
             align-items: flex-start;
+            flex-wrap: nowrap;
         }
 
         .left {
@@ -58,6 +59,7 @@
             box-sizing: border-box;
         }
 
+        /* =============== TITLES & BLOCKS =============== */
         .section-title {
             font-weight: 700;
             margin-bottom: 8px;
@@ -93,6 +95,7 @@
             display: block;
         }
 
+        /* =============== INPUTS / SELECTS =============== */
         .input,
         textarea,
         select {
@@ -104,67 +107,75 @@
             margin-top: 6px;
             margin-bottom: 8px;
         }
-/*  */
+
+        /* =============== BUTTONS (final refined set) =============== */
         .btn {
-    background: #0069d9;
-    color: #fff;
-    padding: 6px 14px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 13px;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 32px;            /* uniform button height */
-    min-width: 90px;         /* all buttons same width */
-    box-sizing: border-box;
-    transition: background .15s;
-}
-.btn:hover {
-    background: #005ac1;
-}
+            background: #0069d9;
+            color: #fff;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px;
+            min-width: 90px;
+            box-sizing: border-box;
+            transition: background .15s;
+        }
 
-.btn.alt {
-    background: #6c757d;
-}
+        .btn:hover {
+            background: #005ac1;
+        }
 
-.btn.alt:hover {
-    background: #5c636a;
-}
+        .btn.alt {
+            background: #6c757d;
+        }
 
-.btn.danger {
-    background: #dc3545;
-}
+        .btn.alt:hover {
+            background: #5c636a;
+        }
 
-.btn.danger:hover {
-    background: #bb2d3b;
-}
-.row-actions {
-    display: flex;
-    flex-direction: row;
-    gap: 6px;
-    align-items: center;
-    justify-content: flex-end;
-}
+        .btn.danger {
+            background: #dc3545;
+        }
 
-/* Smaller CREATE TASK button */
-.btn-create {
-    padding: 6px 14px;
-    height: 32px;
-    font-weight: 600;
-}
+        .btn.danger:hover {
+            background: #bb2d3b;
+        }
 
-/* Top Navbar buttons uniform */
-.top-nav-btn {
-    min-width: 110px;
-}
+        .btn-sm {
+            padding: 5px 10px;
+            height: 28px;
+            min-width: 60px;
+            font-size: 12px;
+        }
 
-/* Avoid button stretching in forms */
-button.btn {
-    width: auto !important;
-}
+        .btn-create {
+            padding: 6px 14px;
+            height: 32px;
+            font-weight: 600;
+        }
+
+        .top-nav-btn {
+            min-width: 110px;
+        }
+
+        button.btn {
+            width: auto !important;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        /* =============== TABLE =============== */
         .table-rows {
             border-collapse: collapse;
             width: 100%;
@@ -178,24 +189,12 @@ button.btn {
             vertical-align: middle;
         }
 
+        /* =============== NOTES / BADGES / UI DETAILS =============== */
         .note {
             font-size: 13px;
             color: #666;
             margin-top: 6px;
         }
-
-        .row-actions {
-            display: flex;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-
-       .btn-sm {
-    padding: 5px 10px;
-    height: 28px;
-    min-width: 60px;
-    font-size: 12px;
-}
 
         .client-link {
             color: #0d6efd;
@@ -243,6 +242,87 @@ button.btn {
         .toast.show {
             opacity: 1;
             transform: translateY(0);
+        }
+
+        /* ============================================================
+                            RESPONSIVE DESIGN
+       ============================================================ */
+
+        /* 🔥 Mobile Phones (max-width: 768px) */
+        @media (max-width: 768px) {
+
+            .container-sheet {
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .left,
+            .right {
+                width: 100%;
+                padding: 14px;
+            }
+
+            .top-nav-btn {
+                min-width: 90px;
+                margin-bottom: 4px;
+            }
+
+            .section-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            .row-actions {
+                justify-content: flex-start;
+                gap: 6px;
+            }
+
+            .btn,
+            .btn-create,
+            .btn-sm {
+                min-width: 80px;
+                height: auto;
+                padding: 8px 10px;
+            }
+
+            .member-block {
+                padding: 10px;
+            }
+
+            .task-row {
+                padding: 8px;
+            }
+
+            .table-rows td,
+            .table-rows th {
+                padding: 6px;
+                font-size: 13px;
+            }
+
+            textarea,
+            select,
+            input {
+                font-size: 14px;
+            }
+        }
+
+        /* 🔥 Medium Tablets (768px – 1024px) */
+        @media (max-width: 1024px) {
+
+            .container-sheet {
+                flex-direction: column;
+            }
+
+            .left,
+            .right {
+                width: 100%;
+            }
+
+            .btn,
+            .btn-create {
+                min-width: 100px;
+            }
         }
     </style>
 
@@ -526,7 +606,7 @@ button.btn {
 
                 <div style="margin-top:12px;">
                     <div class="small" style="font-weight:700;">Today's Target</div>
-                    <div class="note">Editable by leader only (today).</div>
+                    <div class="note">Team Moto</div>
 
                     @if($isLeader && optional($sheet->sheet_date)->isToday() && !$isFinalized)
                         <textarea id="today_target" class="input" rows="4">{{ $sheet->target_text ?? '' }}</textarea>
@@ -536,7 +616,8 @@ button.btn {
                         </div>
                     @else
                         <div style="margin-top:8px; border:1px solid #eee; padding:8px; min-height:80px;">
-                            {{ $sheet->target_text ?? 'No target set' }}</div>
+                            {{ $sheet->target_text ?? 'No target set' }}
+                        </div>
                     @endif
                 </div>
 
@@ -562,17 +643,17 @@ button.btn {
             const tr = document.createElement('tr');
             tr.className = 'task-input-row';
             tr.innerHTML = `
-            <td>
-                <select name="client_id[]" class="input client-select">
-                    <option value="">-- select client --</option>
-                    @foreach($clients as $c)
-                        <option value="{{ $c->client_id }}">{{ addslashes($c->client_company_name) }}</option>
-                    @endforeach
-                </select>
-            </td>
-            <td><textarea name="leader_remark[]" class="input" rows="2"></textarea></td>
-            <td style="text-align:center;"><button type="button" class="btn danger btn-sm" onclick="removeThisRow(this)">-</button></td>
-        `;
+                <td>
+                    <select name="client_id[]" class="input client-select">
+                        <option value="">-- select client --</option>
+                        @foreach($clients as $c)
+                            <option value="{{ $c->client_id }}">{{ addslashes($c->client_company_name) }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td><textarea name="leader_remark[]" class="input" rows="2"></textarea></td>
+                <td style="text-align:center;"><button type="button" class="btn danger btn-sm" onclick="removeThisRow(this)">-</button></td>
+            `;
             tbody.appendChild(tr);
         }
         function removeThisRow(btn) { const tr = btn.closest('tr'); if (tr) tr.remove(); }
@@ -708,7 +789,7 @@ button.btn {
             } catch (e) { console.error(e); showToast('Network error'); }
         }
 
-        /* Unfreeze (testing) — calls new backend route to delete TaskMain for sheet/team/date (controller below) */
+        /* Unfreeze  (remove it in production ...*/
         async function unfreezeSheet(sheetId) {
             if (!confirm('Unfreeze for testing? This will remove the snapshot and reopen editing.')) return;
             const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -729,3 +810,5 @@ button.btn {
     </script>
 
 @endsection
+
+{{-- final code --}}
