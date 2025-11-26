@@ -23,14 +23,16 @@
 
         <table>
             <thead>
-                <tr>
+                <tr> <strong>
                     <th>ID</th>
                     <th>Date</th>
+                    
                     <th>Team</th>
                     <th>Leader</th>
                     <th>Member</th>
                     <th>Notes</th>
                     <th>Action</th>
+                </strong>
                 </tr>
             </thead>
             <tbody>

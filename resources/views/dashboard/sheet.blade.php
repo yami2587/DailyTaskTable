@@ -244,11 +244,9 @@
             transform: translateY(0);
         }
 
-        /* ============================================================
-                            RESPONSIVE DESIGN
-       ============================================================ */
 
-        /* 🔥 Mobile Phones (max-width: 768px) */
+                            /* RESPONSIVE DESIGN */
+        /*Mobile Phones (max-width: 768px) */
         @media (max-width: 768px) {
 
             .container-sheet {
@@ -307,7 +305,7 @@
             }
         }
 
-        /* 🔥 Medium Tablets (768px – 1024px) */
+        /*Medium Tablets (768px – 1024px) */
         @media (max-width: 1024px) {
 
             .container-sheet {
@@ -412,7 +410,7 @@
                                                     <span
                                                         class="client-link">{{ optional($clients->firstWhere('client_id', $a->client_id))->client_company_name ?? '-' }}</span>
                                                 </div>
-                                                <div class="small"><strong>Leader remark:</strong> {{ $a->leader_remark ?? '-' }}</div>
+                                                <div class="small"><strong>Task</strong> {{ $a->leader_remark ?? '-' }}</div>
                                                 <div class="small"><strong>Status:</strong>
                                                     {{ ucfirst(str_replace('_', ' ', $a->status ?? 'not_completed')) }}</div>
 
@@ -449,7 +447,7 @@
                                                     @endforeach
                                                 </select>
 
-                                                <label class="small">Leader remark</label>
+                                                <label class="small">Task</label>
                                                 <textarea name="leader_remark" class="input" rows="2">{{ $a->leader_remark }}</textarea>
 
                                                 <label class="small">Member remark / response (editable by leader)</label>
@@ -477,13 +475,13 @@
                                     <thead>
                                         <tr>
                                             <th style="width:40%;">Client</th>
-                                            <th>Leader remark</th>
+                                            <th>Task</th>
                                             <th style="width:90px;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr class="task-input-row">
-                                            <td>
+                                            <td>j
                                                 <select name="client_id[]" class="input client-select">
                                                     <option value="">-- select client --</option>
                                                     @foreach($clients as $c)
@@ -504,7 +502,7 @@
 
                                 <div style="margin-top:8px;">
                                     <button type="button" class="btn success"
-                                        onclick="saveTasksForMember('{{ $memberId }}','{{ $sheet->id }}')">Save Tasks</button>
+                                        onclick="saveTasksForMember('{{ $memberId }}','{{ $sheet->id }}')">Assign</button>
                                     <button type="button" class="btn alt" onclick="toggleCreateTask('{{ $memberId }}')">Close</button>
                                     <div class="note" id="status-{{ $memberId }}"></div>
                                 </div>
@@ -543,7 +541,7 @@
                                 <div class="small"><strong>Client:</strong> <span
                                         class="client-link">{{ optional($clients->firstWhere('client_id', $a->client_id))->client_company_name ?? '-' }}</span>
                                 </div>
-                                <div class="small"><strong>Leader remark:</strong> {{ $a->leader_remark ?? '-' }}</div>
+                                <div class="small"><strong>Task</strong> {{ $a->leader_remark ?? '-' }}</div>
 
                                 @if($isFinalized || !empty($a->is_submitted))
                                     <div class="static-submitted">
@@ -567,7 +565,7 @@
                                         <div id="member-remark-box-{{ $a->id }}"
                                             style="margin-top:8px; @if(($a->status ?? '') == 'completed') display:none; @endif">
                                             <label class="small">Remark (required if not completed / in progress)</label>
-                                            <textarea name="member_remark" rows="3" class="input">{{ $a->member_remark ?? '' }}</textarea>
+                                            <textarea name="member_remark" rows="3" class="input" >{{ $a->member_remark ?? '' }}</textarea>
                                         </div>
 
                                         <div style="margin-top:8px;">
@@ -584,11 +582,11 @@
 
         <!-- RIGHT: Team info + Today's Target -->
         <div class="right">
-            <div class="section-title">Team Details</div>
+            <div class="section-title"><strong> Team Details</strong></div>
 
             @if($sheet)
                 <div>
-                    <div class="small"><strong>Team:</strong> {{ $sheet->team->team_name ?? 'Team ' . $sheet->team_id }}</div>
+                    <div class="small"><strong>Team:</strong>  {{ $sheet->team->team_name ?? 'Team ' . $sheet->team_id }}</div>
                     <div class="small"><strong>Leader:</strong>
                         {{ DB::table('employee_tbl')->where('emp_id', $sheet->leader_emp_id)->value('emp_name') ?? $sheet->leader_emp_id }}
                     </div>
@@ -599,7 +597,7 @@
                     <ul>
                         @foreach($members as $tm)
                             @php $e = $tm->employee ?? null; @endphp
-                            <li>{{ $e->emp_name ?? $tm->emp_id }} @if($tm->is_leader ?? false) (Leader) @endif</li>
+                            <li>{{ $e->emp_name ?? $tm->emp_id }} @if ($tm->is_leader ?? false) <strong>(Leader)</strong> @endif</li>
                         @endforeach
                     </ul>
                 </div>

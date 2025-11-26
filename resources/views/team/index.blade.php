@@ -26,7 +26,7 @@
                         <td>{{ $t->id }}</td>
                         <td>{{ $t->team_name }}</td>
                         <td>{{ Str::limit($t->description, 80) }}</td>
-                        <td><a class="btn" href="{{ route('team.members', $t->id) }}">Manage Members</a></td>
+                        <td style="text-align:center;"><a class="btn" href="{{ route('team.members', $t->id) }}">Manage Members</a></td>
                         <td>
                             <a class="btn" href="{{ route('team.edit', $t->id) }}">Edit</a>
                             <form style="display:inline" method="POST" action="{{ route('team.destroy', $t->id) }}">
