@@ -5,7 +5,7 @@
     @php
         // Provided by controller
         $teams = $teams ?? collect();
-        $selectedTeamId = $selectedTeamId ?? ($teams->first()->team_id ?? null);
+        $selectedTeamId = $selectedTeamId ?? null;
         $date = $date ?? date('Y-m-d');
         $sheet = $sheet ?? null;
         $members = $members ?? collect();
@@ -16,11 +16,50 @@
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    {{-- Bootstrap CDN (remove if your layout already includes it) --}}
+    {{-- NOTE: If your layout already includes Bootstrap, remove these lines --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
-        /* ===== Admin integrated dashboard (single-file) ===== */
+        /* ===== micro animations (keep UI unchanged visually) ===== */
+        .team-item,
+        .task-card,
+        .member-card,
+        .card-surface {
+            transition: all .22s ease;
+        }
+
+        .team-item:hover {
+            transform: translateX(3px);
+        }
+
+        .task-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(16, 24, 40, 0.06);
+        }
+
+        .member-card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* soft fade */
+        .fade-soft {
+            animation: fadeSoft .28s ease;
+        }
+
+        @keyframes fadeSoft {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== keep your original look & layout as-is; only fixes for layout + responsive ===== */
         .admin-wrap {
             padding: 18px;
         }
@@ -45,6 +84,7 @@
             font-size: 13px;
         }
 
+        /* page shell + grid */
         .page-shell {
             border-radius: 14px;
             padding: 14px;
@@ -52,25 +92,35 @@
             box-shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
         }
 
-        /* GRID */
         .admin-grid {
             display: flex;
             gap: 18px;
             align-items: flex-start;
         }
 
-        /* SIDEBAR */
+        /* FIXED-SIDEBAR layout: occupy full height inside page-shell */
+        .fixed-admin-layout {
+            height: calc(100vh - 150px);
+            /* approximate header + container */
+            overflow: visible;
+        }
+
+        .admin-grid {
+            height: 100%;
+        }
+
+        /* sidebar */
         .sidebar {
             width: 260px;
             position: sticky;
             top: 20px;
-            height: calc(100vh - 40px);
+                height: calc(100vh - 150px);
+    overflow-y: auto !important;
             overflow-y: auto;
             padding-right: 6px;
             background: transparent;
         }
 
-        /* TEAM ITEM */
         .team-item {
             padding: 10px 12px;
             border-radius: 10px;
@@ -85,20 +135,7 @@
             margin-bottom: 8px;
         }
 
-        .team-item:hover {
-            background: #f7f9ff;
-            text-decoration: none;
-        }
-
-        .team-item.active {
-            background: linear-gradient(90deg, #6366F1, #A78BFA);
-            color: white;
-            box-shadow: 0 6px 18px rgba(99, 102, 241, 0.12);
-            border-color: rgba(255, 255, 255, 0.06);
-        }
-
-        /* ICON FLAT */
-        .icon-flat {
+        .team-item .icon-flat {
             width: 40px;
             height: 40px;
             border-radius: 8px;
@@ -108,14 +145,25 @@
             background: linear-gradient(135deg, #EEF2FF, #F8FAFF);
             border: 1px solid #e6eefb;
             color: #0b5ed7;
+            flex-shrink: 0;
         }
 
-        /* PANE */
+        .team-item.active {
+            background: linear-gradient(90deg, #6366F1, #A78BFA);
+            color: white;
+            box-shadow: 0 6px 18px rgba(99, 102, 241, 0.12);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        /* pane */
         .pane {
             flex: 1;
+            height: 100%;
+            overflow-y: auto;
+            padding-right: 8px;
         }
 
-        /* Top tabs */
+        /* top controls (date pills etc) - keep unchanged */
         .top-tabs {
             display: flex;
             gap: 10px;
@@ -137,7 +185,7 @@
             color: white;
         }
 
-        /* Cards & task */
+        /* cards / lists */
         .card-surface {
             border-radius: 10px;
             padding: 12px;
@@ -187,7 +235,7 @@
             text-overflow: ellipsis;
         }
 
-        /* status */
+        /* status pills */
         .task-status {
             padding: 6px 12px;
             border-radius: 999px;
@@ -222,18 +270,16 @@
             color: #6b7280;
         }
 
-        /* pills */
-        .day-pill {
-            border-radius: 999px;
-            padding: 6px 10px;
-            font-weight: 700;
-        }
-
-        /* remark expand */
+        /* remark modal body */
         .remark-full {
             white-space: pre-wrap;
             word-break: break-word;
             max-width: 78ch;
+        }
+
+        /* delete modal confirm input */
+        #deleteConfirmInput {
+            letter-spacing: 0.6px;
         }
 
         /* responsive */
@@ -255,7 +301,7 @@
         }
     </style>
 
-    <div class="admin-wrap">
+    <div class="admin-wrap fade-soft">
         <div class="header-row">
             <div>
                 <div class="title">Admin: Team Daily Reports</div>
@@ -292,129 +338,135 @@
             </div>
         </div>
 
-        <div class="page-shell">
-            {{-- Top Tabs (integrated: Reports | Teams | Create Team | Manage Members) --}}
+        <div class="page-shell fade-soft">
+            {{-- Only two tabs as requested --}}
             <div class="top-tabs">
                 <button class="tab-btn active" data-tab="reports" id="tab-reports">Daily Reports</button>
                 <button class="tab-btn" data-tab="teams" id="tab-teams">Teams</button>
-                <button class="tab-btn" data-tab="create-team" id="tab-create-team">Create Team</button>
-                <button class="tab-btn" data-tab="manage-members" id="tab-manage-members">Team Members</button>
             </div>
 
-            <div class="admin-grid">
-                {{-- Sidebar: team list + summary --}}
-                <div class="sidebar">
-                    <div style="margin-bottom:8px; font-weight:700;">Teams</div>
-                    <div class="list-group mb-3">
-                        @foreach($teams as $t)
-                            @php
-                                $tid = $t->team_id ?? $t->id ?? null;
-                                $tname = $t->team_name ?? ('Team ' . $tid);
-                                $active = ($tid == $selectedTeamId);
-                            @endphp
-                            <a href="{{ route('admin.dashboard', ['team_id' => $tid, 'date' => $date]) }}"
-                                class="team-item list-group-item list-group-item-action {{ $active ? 'active' : '' }}">
-                                <div style="display:flex; gap:10px; align-items:center;">
-                                    <div class="icon-flat" aria-hidden="true">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                            viewBox="0 0 16 16" style="color:#0b5ed7">
-                                            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z" />
-                                            <path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                                        </svg>
+            <div class="fixed-admin-layout">
+                <div class="admin-grid">
+                    {{-- SIDEBAR: teams --}}
+                    <div class="sidebar fade-soft">
+                        <div style="margin-bottom:8px; font-weight:700;">Teams</div>
+                        <div class="list-group mb-3">
+                            @foreach($teams as $t)
+                                @php
+                                    $tid = $t->id ?? $t->team_id;
+                                    $active = ($tid == $selectedTeamId);
+                                @endphp
+
+                                {{-- important: always include team id in route/url to avoid UrlGenerationException --}}
+                                <a href="{{ route('admin.dashboard', ['team_id' => $tid, 'date' => $date]) }}"
+                                    class="team-item {{ $active ? 'active' : '' }}">
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <div class="icon-flat" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                                viewBox="0 0 16 16">
+                                                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z" />
+                                                <path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                                            </svg>
+                                        </div>
+                                        <div style="font-weight:600;">{{ $t->team_name }}</div>
                                     </div>
-                                    <div style="font-weight:600;">{{ $tname }}</div>
+                                    <div class="small text-muted">{{ \App\Models\TeamMember::where('team_id', $tid)->count() }}
+                                        members</div>
+                                </a>
+                            @endforeach
+                        </div>
+
+                        {{-- Summary: only shows when a team is selected (keeps original behavior) --}}
+                        @if($selectedTeamId)
+                            <div style="margin-top:6px;">
+                                <div style="font-weight:700; margin-bottom:6px;">Summary
+                                    ({{ \Carbon\Carbon::parse($date)->format('d M, Y') }})</div>
+                                <div class="d-flex gap-2 mb-2 fade-soft">
+                                    <div class="p-2"
+                                        style="border-radius:8px;background:#fff;border:1px solid #eef2ff;min-width:92px;text-align:center;">
+                                        <div class="small">Tasks</div>
+                                        <div style="font-weight:700">{{ $summary['total_tasks'] }}</div>
+                                    </div>
+                                    <div class="p-2"
+                                        style="border-radius:8px;background:#fff;border:1px solid #eef2ff;min-width:92px;text-align:center;">
+                                        <div class="small">Completed</div>
+                                        <div style="font-weight:700;color:#065f46;">{{ $summary['completed'] }}</div>
+                                    </div>
                                 </div>
-                                <div class="small text-muted">{{ \App\Models\TeamMember::where('team_id', $tid)->count() }}
-                                    members</div>
-                            </a>
-                        @endforeach
+
+                                <div class="d-flex gap-2 fade-soft">
+                                    <div class="p-2"
+                                        style="border-radius:8px;background:#fff;border:1px solid #eef2ff;min-width:92px;text-align:center;">
+                                        <div class="small">In Progress</div>
+                                        <div style="font-weight:700;">{{ $summary['in_progress'] }}</div>
+                                    </div>
+                                    <div class="p-2"
+                                        style="border-radius:8px;background:#fff;border:1px solid #eef2ff;min-width:92px;text-align:center;">
+                                        <div class="small">Not Done</div>
+                                        <div style="font-weight:700;color:#7a0f0f;">{{ $summary['not_completed'] }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
-                    <div style="margin-top:6px;">
-                        <div style="font-weight:700; margin-bottom:6px;">Summary
-                            ({{ \Carbon\Carbon::parse($date)->format('d M, Y') }})</div>
-                        <div class="d-flex gap-2 mb-2">
-                            <div class="p-2"
-                                style="border-radius:8px; background:#fff; border:1px solid #eef2ff; min-width:92px; text-align:center;">
-                                <div class="small">Tasks</div>
-                                <div style="font-weight:700">{{ $summary['total_tasks'] }}</div>
+                    {{-- MAIN PANE: Reports & Teams panels (show/hide via JS) --}}
+                    <div class="pane fade-soft" id="panel-reports">
+                        @if(!$selectedTeamId)
+                            <div class="alert alert-secondary fade-soft">No team selected. Please choose a team from the left.
                             </div>
-                            <div class="p-2"
-                                style="border-radius:8px; background:#fff; border:1px solid #eef2ff; min-width:92px; text-align:center;">
-                                <div class="small">Completed</div>
-                                <div style="font-weight:700; color:#065f46;">{{ $summary['completed'] }}</div>
-                            </div>
-                        </div>
+                        @else
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 style="margin:0;">Team: {{ $sheet->team->team_name ?? 'Team ' . $selectedTeamId }}</h5>
+                                    <div class="small">Date: {{ \Carbon\Carbon::parse($date)->format('d M, Y') }}</div>
+                                </div>
 
-                        <div class="d-flex gap-2">
-                            <div class="p-2"
-                                style="border-radius:8px; background:#fff; border:1px solid #eef2ff; min-width:92px; text-align:center;">
-                                <div class="small">In Progress</div>
-                                <div style="font-weight:700;">{{ $summary['in_progress'] }}</div>
-                            </div>
-                            <div class="p-2"
-                                style="border-radius:8px; background:#fff; border:1px solid #eef2ff; min-width:92px; text-align:center;">
-                                <div class="small">Not Done</div>
-                                <div style="font-weight:700; color:#7a0f0f;">{{ $summary['not_completed'] }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Main pane (all tabs live here; we show/hide client-side) --}}
-                <div class="pane">
-
-                    {{-- === TAB: Daily Reports === --}}
-                    <div id="panel-reports" class="tab-panel">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <h5 style="margin:0;">@if($selectedTeamId) Team:
-                                {{ $sheet->team->team_name ?? 'Team ' . $selectedTeamId }} @else No team selected @endif
-                                </h5>
-                                <div class="small">Date: {{ \Carbon\Carbon::parse($date)->format('d M, Y') }}</div>
+                                <div class="d-flex gap-2">
+                                    {{-- <a class="btn btn-outline-secondary btn-sm" href="{{ route('admin.dashboard') }}">All
+                                        teams</a> --}}
+                                    <a href="{{ route('admin.dashboard', ['team_id' => $selectedTeamId, 'date' => $date]) }}"
+                                        class="btn btn-primary btn-sm">Refresh</a>
+                                    {{-- Manage members inline: opens modal with selected team --}}
+                                    <button class="btn btn-outline-primary btn-sm"
+                                        onclick="openManageMembersModal({{ $selectedTeamId }})">Manage Members</button>
+                                </div>
                             </div>
 
-                            <div class="d-flex gap-2">
-                                <a class="btn btn-outline-secondary btn-sm" href="{{ route('admin.dashboard') }}">All
-                                    teams</a>
-                                <a href="{{ route('admin.dashboard', ['team_id' => $selectedTeamId, 'date' => $date]) }}"
-                                    class="btn btn-primary btn-sm">Refresh</a>
-                            </div>
-                        </div>
+                            {{-- Members summary card (compact) --}}
+                            <div class="card-surface mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div style="font-weight:700;">Team Members</div>
+                                    <div class="small text-muted">{{ $members->count() }} members</div>
+                                </div>
 
-                        {{-- Members card --}}
-                        <div class="card-surface mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div style="font-weight:700;">Team Members</div>
-                                <div class="small text-muted">{{ $members->count() }} members</div>
-                            </div>
-
-                            <div class="mt-3">
-                                <div class="row g-2">
+                                <div class="mt-3 row g-2">
                                     @foreach($members as $m)
-                                        @php $e = $m->employee ?? null;
-                                        $name = $e->emp_name ?? $m->emp_id; @endphp
                                         <div class="col-12 col-md-6">
-                                            <div class="member-card">
+                                            <div class="member-card fade-soft">
                                                 <div class="icon-flat" aria-hidden="true">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                        fill="currentColor" viewBox="0 0 16 16" style="color:#0b5ed7">
+                                                        fill="currentColor">
                                                         <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z" />
                                                         <path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
                                                     </svg>
                                                 </div>
 
                                                 <div style="margin-left:6px;">
-                                                    <div style="font-weight:700;">{{ $name }} @if($m->is_leader) <span
-                                                    class="small text-primary"> — Leader</span> @endif</div>
-                                                    <div class="small text-muted">@if($m->designation ?? false)
-                                                    {{ $m->designation }} @endif</div>
+                                                    <div style="font-weight:700;">
+                                                        {{ $m->employee->emp_name ?? $m->emp_id }}
+                                                        @if($m->is_leader)
+                                                            <span class="small text-primary"> — Leader</span>
+                                                        @endif
+                                                    </div>
+                                                    @if(!empty($m->employee->emp_designation ?? false))
+                                                        <div class="small text-muted">{{ $m->employee->emp_designation }}</div>
+                                                    @endif
                                                 </div>
 
-                                                <div class="ms-auto text-end">
-                                                    <div class="small">Assigned today:
-                                                        <strong>{{ $assignments->where('member_emp_id', $m->emp_id)->count() }}</strong>
-                                                    </div>
+                                                <div class="ms-auto small">
+                                                    Assigned today:
+                                                    <strong>{{ $assignments->where('member_emp_id', $m->emp_id)->count() }}</strong>
                                                 </div>
                                             </div>
                                         </div>
@@ -427,101 +479,96 @@
                                     @endif
                                 </div>
                             </div>
-                        </div>
 
-                        {{-- Tasks grouped by member --}}
-                        <div>
-                            @if(!$sheet)
-                                <div class="alert alert-warning">No sheet exists for this date for the selected team.</div>
-                            @endif
+                            {{-- Tasks grouped by member --}}
+                            <div>
+                                @if(!$sheet)
+                                    <div class="alert alert-warning fade-soft">No sheet exists for this date.</div>
+                                @endif
 
-                            @if($sheet && $assignments->isEmpty())
-                                <div class="alert alert-info">Sheet exists but no assignments were added for this date.</div>
-                            @endif
+                                @if($sheet && $assignments->isEmpty())
+                                    <div class="alert alert-info fade-soft">No tasks added for today.</div>
+                                @endif
 
-                            @if($sheet && $assignments->isNotEmpty())
-                                @php $grouped = $assignments->groupBy('member_emp_id'); @endphp
+                                @if($sheet && $assignments->isNotEmpty())
+                                    @php $grouped = $assignments->groupBy('member_emp_id'); @endphp
 
-                                @foreach($grouped as $memberId => $memberAssignments)
-                                    @php
-                                        $member = $members->firstWhere('emp_id', $memberId);
-                                        $memberName = $member ? ($member->employee->emp_name ?? $member->emp_id) : ($memberId ?? 'Unknown');
-                                    @endphp
+                                    @foreach($grouped as $memberId => $rows)
+                                        @php
+                                            $mem = $members->firstWhere('emp_id', $memberId);
+                                            $name = $mem ? ($mem->employee->emp_name ?? $memberId) : $memberId;
+                                        @endphp
 
-                                    <div class="mb-2"
-                                        style="font-weight:800; margin-top:18px; display:flex; align-items:center; gap:12px;">
-                                        <div class="icon-flat" style="width:44px;height:44px;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                                viewBox="0 0 16 16" style="color:#0b5ed7">
-                                                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z" />
-                                                <path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                                            </svg>
-                                        </div>
-
-                                        <div>
-                                            <div style="font-weight:800;">{{ $memberName }}</div>
-                                            <div class="small text-muted">{{ $memberAssignments->count() }} task(s)</div>
-                                        </div>
-                                    </div>
-
-                                    @foreach($memberAssignments as $a)
-                                        <div class="task-card">
-                                            <div class="task-left">
-                                                <div class="task-title">
-                                                    {{ optional($clients->firstWhere('client_id', $a->client_id))->client_company_name ?? '—' }}
-                                                </div>
-                                                <div class="task-desc" title="{{ $a->leader_remark ?? $a->task_description ?? '' }}">
-                                                    {{-- trimmed view; click "View" to read full --}}
-                                                    {{ \Illuminate\Support\Str::limit($a->leader_remark ?? $a->task_description ?? '-', 240) }}
-                                                </div>
-
-                                                <div class="meta mt-2">
-                                                    <strong>Member remark:</strong>
-                                                    <span class="small">
-                                                        {{ \Illuminate\Support\Str::limit($a->member_remark ?? '-', 100) }}
-                                                    </span>
-                                                    @if(strlen($a->member_remark ?? '') > 100)
-                                                        &nbsp; <a href="#" class="ms-2 view-remark" data-title="Member remark"
-                                                            data-content="{{ e($a->member_remark) }}">View</a>
-                                                    @endif
-                                                    @if(strlen($a->leader_remark ?? '') > 240)
-                                                        &nbsp; <a href="#" class="ms-2 view-remark" data-title="Leader remark"
-                                                            data-content="{{ e($a->leader_remark) }}">View</a>
-                                                    @endif
-                                                </div>
+                                        <div class="mt-3" style="font-weight:800; display:flex; gap:8px; align-items:center;">
+    <div class="icon-flat" style="width:40px;height:40px; display:flex; align-items:center; justify-content:center;">
+     
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
+                                                    <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z" />
+                                                    <path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                                                </svg>
                                             </div>
-
-                                            <div style="min-width:150px; text-align:right;">
-                                                <div>
-                                                    <span
-                                                        class="task-status {{ $a->status ?? 'not_completed' }}">{{ ucfirst($a->status ?? 'not_completed') }}</span>
-                                                </div>
-                                                <div class="small text-muted mt-2">Submitted: {{ $a->is_submitted ? 'Yes' : 'No' }}
-                                                </div>
+                                            <div>{{ $name }}
+                                                <div class="small text-muted">{{ $rows->count() }} task(s)</div>
                                             </div>
                                         </div>
+
+                                        @foreach($rows as $a)
+                                            <div class="task-card fade-soft">
+                                                <div class="task-left">
+                                                    <div class="task-title">
+                                                        {{ optional($clients->firstWhere('client_id', $a->client_id))->client_company_name ?? '—' }}
+                                                    </div>
+                                                    <div class="task-desc" title="{{ $a->leader_remark ?? $a->task_description ?? '' }}">
+                                                        {{ \Illuminate\Support\Str::limit($a->leader_remark ?? $a->task_description ?? '-', 240) }}
+                                                    </div>
+
+                                                    <div class="meta mt-2">
+                                                        <strong>Member remark:</strong>
+                                                        <span class="small">
+                                                            {{ \Illuminate\Support\Str::limit($a->member_remark ?? '-', 100) }}
+                                                        </span>
+                                                        @if(strlen($a->member_remark ?? '') > 100)
+                                                            &nbsp;<a href="#" class="ms-2 view-remark" data-title="Member remark"
+                                                                data-content="{{ e($a->member_remark) }}">View</a>
+                                                        @endif
+                                                        @if(strlen($a->leader_remark ?? '') > 240)
+                                                            &nbsp;<a href="#" class="ms-2 view-remark" data-title="Leader remark"
+                                                                data-content="{{ e($a->leader_remark) }}">View</a>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                <div style="min-width:150px; text-align:right;">
+                                                    <div><span
+                                                            class="task-status {{ $a->status ?? 'not_completed' }}">{{ ucfirst($a->status ?? 'not_completed') }}</span>
+                                                    </div>
+                                                    <div class="small text-muted mt-2">Submitted: {{ $a->is_submitted ? 'Yes' : 'No' }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     @endforeach
-                                @endforeach
-                            @endif
-                        </div>
+                                @endif
+                            </div>
+                        @endif
                     </div>
 
-                    {{-- === TAB: Teams (list + actions) === --}}
-                    <div id="panel-teams" class="tab-panel" style="display:none;">
+                    {{-- TEAMS panel (list + inline actions). Note: Members button opens inline modal (no navigation). --}}
+                    <div class="pane fade-soft" id="panel-teams" style="display:none;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div style="font-weight:700;">All Teams</div>
                             <div>
-                                <a href="#" class="btn btn-primary btn-sm" onclick="showCreateTeam()">Create team</a>
+                                <button class="btn btn-primary btn-sm" onclick="openCreateTeamModal()">Create Team</button>
                             </div>
                         </div>
 
                         <div class="row g-2">
                             @foreach($teams as $t)
                                 <div class="col-12 col-md-6">
-                                    <div class="card-surface">
+                                    <div class="card-surface fade-soft">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div>
-                                                <div style="font-weight:800;">{{ $t->team_name ?? 'Team ' . $t->team_id }}</div>
+                                                <div style="font-weight:800;">{{ $t->team_name }}</div>
                                                 @if(!empty($t->description))
                                                     <div class="small text-muted mt-1">
                                                         {{ \Illuminate\Support\Str::limit($t->description, 160) }}</div>
@@ -529,11 +576,17 @@
                                             </div>
 
                                             <div class="text-end">
-                                                <a class="btn btn-outline-primary btn-sm mb-1"
-                                                    href="{{ route('team.members', $t->id ?? $t->team_id) }}">Members</a>
-                                                <button class="btn btn-ghost btn-sm mb-1"
-                                                    onclick="editTeam({{ $t->id ?? $t->team_id }}, '{{ e($t->team_name) }}', '{{ e($t->description ?? '') }}')">Edit</button>
+                                                {{-- Members: open manage modal with team preselected --}}
+                                                <button class="btn btn-outline-primary btn-sm mb-1"
+                                                    onclick="openManageMembersModal({{ $t->id }}, true)">Members</button>
 
+                                                {{-- Edit: opens modal (inline) --}}
+                                                <button class="btn btn-outline-primary btn-sm mb-1"
+                                                    onclick="openEditTeamModal({{ $t->id }}, '{{ e($t->team_name) }}', '{{ e($t->description ?? '') }}')">Edit</button>
+
+                                                {{-- Delete: GitHub-style confirm modal --}}
+                                                <button class="btn btn-danger btn-sm"
+                                                    onclick="openDeleteTeamModal({{ $t->id }}, '{{ e($t->team_name) }}')">Delete</button>
                                             </div>
                                         </div>
                                     </div>
@@ -546,104 +599,12 @@
                             @endif
                         </div>
                     </div>
+                </div> {{-- admin-grid --}}
+            </div> {{-- fixed-admin-layout --}}
+        </div> {{-- page-shell --}}
+    </div> {{-- admin-wrap --}}
 
-                    {{-- === TAB: Create Team (inline form) === --}}
-                    <div id="panel-create-team" class="tab-panel" style="display:none;">
-                        <div class="card-surface">
-                            <div style="font-weight:700;">Create Team</div>
-                            <form method="POST" action="{{ route('team.store') }}" class="mt-3" id="form-create-team">
-                                @csrf
-                                <div class="mb-2">
-                                    <label class="small">Team Name</label>
-                                    <input name="team_name" class="form-control" required>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="small">Description</label>
-                                    <textarea name="description" class="form-control" rows="3"></textarea>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-primary" type="submit">Save</button>
-                                    <button class="btn btn-outline-secondary" type="button"
-                                        onclick="clearCreateForm()">Reset</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                    {{-- === TAB: Manage Members (select team then add/remove members) === --}}
-                    <div id="panel-manage-members" class="tab-panel" style="display:none;">
-                        <div class="card-surface mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div style="font-weight:700;">Manage Members</div>
-
-                                <div>
-                                    <form id="manageDateForm" method="GET" action="{{ route('admin.dashboard') }}"
-                                        class="d-flex gap-2 align-items-center">
-                                        <select id="manageTeamSelect" class="form-select form-select-sm"
-                                            style="min-width:220px;">
-                                            @foreach($teams as $t)
-                                                <option value="{{ $t->id ?? $t->team_id }}" {{ ($t->id ?? $t->team_id) == $selectedTeamId ? 'selected' : '' }}>
-                                                    {{ $t->team_name ?? 'Team ' . $t->team_id }}</option>
-                                            @endforeach
-                                        </select>
-                                        <button class="btn btn-primary btn-sm" type="button"
-                                            onclick="loadMembersForTeam()">Load</button>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <div class="mt-3" id="members-manage-area">
-                                {{-- loaded content via server / was provided: show members and form to add --}}
-                                <div class="row">
-                                    <div class="col-12 col-md-6">
-                                        <div style="font-weight:700;">Members</div>
-                                        <div class="mt-2">
-                                            @foreach($members as $m)
-                                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                                    <div>
-                                                        <div style="font-weight:700;">{{ $m->employee->emp_name ?? $m->emp_id }}
-                                                        </div>
-                                                        <div class="small text-muted">@if($m->is_leader) Leader @endif</div>
-                                                    </div>
-                                                    <form method="POST"
-                                                        action="{{ route('team.members.remove', [$selectedTeamId, $m->id ?? $m->emp_id]) }}"
-                                                        onsubmit="return confirm('Remove member?');">
-                                                        @csrf @method('DELETE')
-                                                        <button class="btn btn-outline-danger btn-sm">Remove</button>
-                                                    </form>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-
-                                    <div class="col-12 col-md-6">
-                                        <div style="font-weight:700;">Add Member</div>
-                                        <form method="POST" action="{{ route('team.members.add', $selectedTeamId) }}"
-                                            class="mt-2">
-                                            @csrf
-                                            <div class="mb-2">
-                                                <label class="small">Employee ID</label>
-                                                <input name="emp_id" class="form-control" required>
-                                            </div>
-                                            <div class="mb-2">
-                                                <label class="small">Is Leader?</label>
-                                                <select name="is_leader" class="form-select">
-                                                    <option value="0">No</option>
-                                                    <option value="1">Yes</option>
-                                                </select>
-                                            </div>
-                                            <button class="btn btn-primary btn-sm">Add</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div> {{-- end pane --}}
-            </div> {{-- end admin-grid --}}
-        </div> {{-- end page shell --}}
-    </div> {{-- end admin-wrap --}}
+    {{-- ----- MODALS ----- --}}
 
     {{-- Remark modal (view full text) --}}
     <div class="modal fade" id="remarkModal" tabindex="-1" aria-hidden="true">
@@ -661,52 +622,164 @@
         </div>
     </div>
 
-    {{-- Simple edit team modal --}}
+    {{-- Create Team Modal --}}
+    <div class="modal fade" id="createTeamModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="createTeamForm" method="POST" action="{{ route('team.store') }}" class="modal-content">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Team</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="small">Team Name</label>
+                    <input name="team_name" class="form-control mb-2" required>
+                    <label class="small">Description</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Edit Team Modal --}}
     <div class="modal fade" id="editTeamModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <form id="editTeamForm" method="POST" class="modal-content">
                 @csrf @method('PUT')
                 <div class="modal-header">
                     <h5 class="modal-title">Edit Team</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-2">
-                        <label class="small">Team Name</label>
-                        <input name="team_name" id="edit_team_name" class="form-control" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="small">Description</label>
-                        <textarea name="description" id="edit_team_description" class="form-control" rows="3"></textarea>
-                    </div>
+                    <label class="small">Team Name</label>
+                    <input name="team_name" id="edit_team_name" class="form-control mb-2" required>
+                    <label class="small">Description</label>
+                    <textarea name="description" id="edit_team_description" class="form-control" rows="3"></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Save changes</button>
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-
-                    <form method="POST" action="{{ route('team.destroy', $t->id ?? $t->team_id) }}"
-                        style="display:inline-block;" onsubmit="return confirm('Delete team?');" >
-                        @csrf @method('DELETE')
-                        <button class="btn btn-danger ">Delete</button>
-                    </form>
+                    <button class="btn btn-primary">Save</button>
                 </div>
             </form>
         </div>
     </div>
 
-    {{-- Bootstrap JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {{-- Manage Members Modal (Add / Remove members inline; uses TeamController routes) --}}
+    <div class="modal fade" id="manageMembersModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Members — <span id="manageModalTeamName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div style="font-weight:700;">Current Members</div>
+                            <div id="membersListArea" class="mt-2">
+                                {{-- dynamically filled via AJAX OR server-rendered html when page loads (fallback) --}}
+                                @foreach($members as $m)
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div>
+                                            <div style="font-weight:700;">{{ $m->employee->emp_name ?? $m->emp_id }}</div>
+                                            <div class="small text-muted">@if($m->is_leader) Leader @endif</div>
+                                        </div>
+                                        <form method="POST" class="remove-member-form" data-team-id="{{ $selectedTeamId }}"
+                                            data-member-id="{{ $m->id }}"
+                                            action="{{ route('team.members.remove', ['team' => $selectedTeamId, 'member' => $m->id]) }}">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-outline-danger btn-sm">Remove</button>
+                                        </form>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div style="font-weight:700;">Add Member</div>
+                            <form id="addMemberForm" method="POST" action="" class="mt-2">
+                                @csrf
+                                <input type="hidden" name="team_id" id="addMemberTeamId" value="">
+                                <div class="mb-2">
+                                    <label class="small">Employee</label>
+                                    {{-- server side we may provide $employees if available; but we also fetch via AJAX if
+                                    not --}}
+                                    <select name="emp_id" id="addMemberSelect" class="form-select" required>
+                                        <option value="">-- choose employee --</option>
+                                        @php
+                                            // If employees variable was provided by controller, show them (non-invasive)
+                                            $employees = $employees ?? collect();
+                                          @endphp
+                                        @foreach($employees as $e)
+                                            <option value="{{ $e->emp_id }}">{{ $e->emp_name }} ({{ $e->emp_id }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="small">Is Leader?</label>
+                                    <select name="is_leader" class="form-select">
+                                        <option value="0">No</option>
+                                        <option value="1">Yes</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <button class="btn btn-primary btn-sm">Add Member</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div> {{-- row --}}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    {{-- Delete Team Modal (GitHub-like confirm) --}}
+    <div class="modal fade" id="deleteTeamModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="POST" id="deleteTeamForm" class="modal-content">
+                @csrf @method('DELETE')
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Team</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p class="mb-2">This action <strong>cannot</strong> be undone. Deleting a team removes it and its
+                        membership links. If tasks/sheets are linked to this team you will lose the group association.</p>
+                    <p class="mb-2">To confirm deletion, type the team name exactly:</p>
+
+                    <div class="mb-2">
+                        <input type="text" id="deleteConfirmInput" class="form-control"
+                            placeholder="Type team name to confirm">
+                    </div>
+
+                    <div class="mt-2">
+                        <strong>Team:</strong> <span id="deleteTeamName" style="font-weight:700"></span>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button id="deleteTeamButton" class="btn btn-danger" disabled>Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ----- JS: keep behavior inline; no external redirection for member actions ----- --}}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
-            // Tabs
+            // Tabs show/hide
             const tabs = document.querySelectorAll('.tab-btn');
             const panels = {
                 'reports': document.getElementById('panel-reports'),
-                'teams': document.getElementById('panel-teams'),
-                'create-team': document.getElementById('panel-create-team'),
-                'manage-members': document.getElementById('panel-manage-members'),
+                'teams': document.getElementById('panel-teams')
             };
             tabs.forEach(t => t.addEventListener('click', function () {
                 tabs.forEach(x => x.classList.remove('active'));
@@ -715,66 +788,142 @@
                 Object.keys(panels).forEach(k => panels[k].style.display = (k === target) ? '' : 'none');
             }));
 
-            // Remark view (modal)
+            // remark modal handler
             document.querySelectorAll('.view-remark').forEach(el => {
-                el.addEventListener('click', function (ev) {
-                    ev.preventDefault();
-                    const title = this.dataset.title || 'Remark';
-                    const content = this.dataset.content || '';
-                    document.getElementById('remarkModalTitle').innerText = title;
-                    document.getElementById('remarkModalBody').innerText = content;
-                    var remModal = new bootstrap.Modal(document.getElementById('remarkModal'));
-                    remModal.show();
+                el.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.getElementById('remarkModalTitle').innerText = this.dataset.title || 'Remark';
+                    document.getElementById('remarkModalBody').innerText = this.dataset.content || '';
+                    new bootstrap.Modal(document.getElementById('remarkModal')).show();
                 });
             });
 
-            // Edit team: fill modal and set action dynamically
-            window.editTeam = function (id, name, description) {
-                const form = document.getElementById('editTeamForm');
-                form.action = '/team/' + id; // matches resource route team.update
-                document.getElementById('edit_team_name').value = name;
-                document.getElementById('edit_team_description').value = description;
-                var editModal = new bootstrap.Modal(document.getElementById('editTeamModal'));
-                editModal.show();
-            };
+            // Manage member form submission: route depends on selected team. We will handle add via normal POST to team.members.add (with team id)
+            // To keep UX inline: after successful add/remove, controller redirects back to admin.dashboard with team_id/date so user stays on same page.
+            // For forms in members modal that were rendered server-side, default behavior will work.
+            // We'll intercept add member form to set correct action URL when modal is opened.
 
-            // Show create team tab quickly
-            window.showCreateTeam = function () {
-                document.getElementById('tab-create-team').click();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            };
-
-            // Clear create form
-            window.clearCreateForm = function () {
-                document.getElementById('form-create-team').reset();
-            };
-
-            // Load members for team (simple: navigate to admin dashboard with team_id)
-            window.loadMembersForTeam = function () {
-                const sel = document.getElementById('manageTeamSelect');
-                const teamId = sel.value;
-                const date = "{{ $date }}";
-                // navigate to admin.dashboard with team_id + date
-                const url = new URL(window.location.origin + "{{ route('admin.dashboard') }}");
-                url.searchParams.set('team_id', teamId);
-                url.searchParams.set('date', date);
-                window.location.href = url.toString();
-            };
-
-            // keep selectedTeamInput updated when sidebar links clicked
-            document.querySelectorAll('.team-item').forEach(function (el) {
-                el.addEventListener('click', function () {
-                    // anchor navigation will happen; keep hidden input sync if used
-                    const href = el.getAttribute('href');
-                    try {
-                        const url = new URL(href, window.location.origin);
-                        const id = url.searchParams.get('team_id') || url.searchParams.get('team') || null;
-                        if (id) document.getElementById('selectedTeamInput').value = id;
-                    } catch (e) { }
+            // Remove member forms (server-rendered) - forms already have proper action attribute
+            document.querySelectorAll('.remove-member-form').forEach(f => {
+                f.addEventListener('submit', function (evt) {
+                    // Allow default; server will redirect back to admin.dashboard -> stays on page
                 });
+            });
+
+            // Add member form: action set dynamically when opening modal
+            document.getElementById('addMemberForm').addEventListener('submit', function (evt) {
+                // default submit will hit team.members.add route
+            });
+
+            // Edit team: form action set dynamically in function openEditTeamModal()
+            document.getElementById('editTeamForm').addEventListener('submit', function () { /* default POST works */ });
+
+            // Delete modal: enable delete button only when exact name typed
+            const deleteConfirmInput = document.getElementById('deleteConfirmInput');
+            const deleteTeamButton = document.getElementById('deleteTeamButton');
+            deleteConfirmInput && deleteConfirmInput.addEventListener('input', function () {
+                const expected = document.getElementById('deleteTeamName').innerText.trim();
+                deleteTeamButton.disabled = (this.value.trim() !== expected);
+            });
+
+            // Intercept addMemberForm to set action based on team id in hidden input
+            const addMemberForm = document.getElementById('addMemberForm');
+            addMemberForm && addMemberForm.addEventListener('submit', function () {
+                const teamId = document.getElementById('addMemberTeamId').value;
+                if (!teamId) { alert('Team not selected'); event.preventDefault(); return false; }
+                // set action to route('team.members.add', teamId)
+                this.action = '/team/' + teamId + '/members';
+            });
+
+            // Intercept delete form submit: ensure confirm match (additional safety)
+            const deleteForm = document.getElementById('deleteTeamForm');
+            deleteForm && deleteForm.addEventListener('submit', function (evt) {
+                const typed = deleteConfirmInput.value.trim();
+                const expected = document.getElementById('deleteTeamName').innerText.trim();
+                if (typed !== expected) { evt.preventDefault(); alert('Please type the exact team name to confirm deletion.'); return false; }
             });
 
         }); // DOMContentLoaded
+
+        // Open create team modal
+        function openCreateTeamModal() {
+            new bootstrap.Modal(document.getElementById('createTeamModal')).show();
+        }
+
+        // Open edit team modal; sets form action to /team/{id}
+        function openEditTeamModal(id, name, desc) {
+            const form = document.getElementById('editTeamForm');
+            form.action = '/team/' + id;
+            document.getElementById('edit_team_name').value = name;
+            document.getElementById('edit_team_description').value = desc;
+            new bootstrap.Modal(document.getElementById('editTeamModal')).show();
+        }
+
+        // Open delete modal; set form action and display name
+        function openDeleteTeamModal(id, name) {
+            const form = document.getElementById('deleteTeamForm');
+            form.action = '/team/' + id;
+            document.getElementById('deleteTeamName').innerText = name;
+            document.getElementById('deleteConfirmInput').value = '';
+            document.getElementById('deleteTeamButton').disabled = true;
+            new bootstrap.Modal(document.getElementById('deleteTeamModal')).show();
+        }
+
+        // Open manage members modal. If `focusMembersTab` true, switch to teams tab first (optional)
+        function openManageMembersModal(teamId, focusMembersList = false) {
+            // set modal team name via AJAX if possible, else use text from DOM
+            fetch('/team/' + teamId + '/members', {
+                headers: { 'Accept': 'application/json' }
+            })
+                .then(res => {
+                    if (res.ok) return res.json();
+                    return res.text().then(txt => { throw txt; });
+                })
+                .then(json => {
+                    // json: { team: {...}, employees: [...], members: [...] }
+                    document.getElementById('manageModalTeamName').innerText = json.team.team_name;
+                    // fill members list
+                    const membersArea = document.getElementById('membersListArea');
+                    membersArea.innerHTML = '';
+                    json.members.forEach(m => {
+                        const memberNode = document.createElement('div');
+                        memberNode.className = 'd-flex align-items-center justify-content-between mb-2';
+                        memberNode.innerHTML = `<div><div style="font-weight:700;">${m.employee_name ?? m.emp_id}</div><div class="small text-muted">${m.is_leader ? 'Leader' : ''}</div></div>
+                <form method="POST" class="remove-member-form" data-team-id="${teamId}" data-member-id="${m.id}" action="/team/${teamId}/members/${m.id}">
+                    <input type="hidden" name="_token" value="${document.querySelector('meta[name=csrf-token]').content}">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button class="btn btn-outline-danger btn-sm">Remove</button>
+                </form>`;
+                        membersArea.appendChild(memberNode);
+                    });
+
+                    // fill employee select (if employees present)
+                    const select = document.getElementById('addMemberSelect');
+                    if (select) {
+                        select.innerHTML = '<option value="">-- choose employee --</option>';
+                        json.employees.forEach(e => {
+                            const opt = document.createElement('option');
+                            opt.value = e.emp_id;
+                            opt.text = `${e.emp_name} (${e.emp_id})`;
+                            select.appendChild(opt);
+                        });
+                    }
+
+                    // set hidden team id
+                    document.getElementById('addMemberTeamId').value = teamId;
+                    // update add member form action (will be finalized on submit)
+                    document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
+
+                    new bootstrap.Modal(document.getElementById('manageMembersModal')).show();
+                })
+                .catch(err => {
+                    // fallback: show modal with existing server-rendered content, set team id hidden
+                    document.getElementById('manageModalTeamName').innerText = '';
+                    document.getElementById('addMemberTeamId').value = teamId;
+                    document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
+                    new bootstrap.Modal(document.getElementById('manageMembersModal')).show();
+                });
+        }
     </script>
 
 @endsection

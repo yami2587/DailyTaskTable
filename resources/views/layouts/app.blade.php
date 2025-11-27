@@ -28,9 +28,6 @@
             letter-spacing: 0.5px;
         }
 
-        .container {
-            padding: 25px;
-        }
 
         .card {
             background: #fff;
@@ -91,6 +88,41 @@
         .danger:hover {
             background: #c0392b;
         }
+        /* FIXES SIDEBAR JUMPING + WHITE GAP + FULL HEIGHT PAGE */
+html, body {
+    height: 100%;
+}
+
+/* Removes container padding influence on our layout */
+.container {
+    padding: 0 !important;
+}
+
+/* Ensure our admin layout fills entire viewport consistently */
+.admin-wrap {
+    min-height: calc(100vh - 70px); /* your navbar height = ~60-70px */
+    overflow: hidden;
+}
+
+/* Fix sidebar sizing permanently */
+.sidebar {
+    height: calc(100vh - 90px) !important;
+    overflow-y: auto !important;
+    padding-bottom: 40px;
+}
+
+/* Fix main pane scroll consistency */
+.pane {
+    height: calc(100vh - 90px);
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+/* Fix page-shell full height always */
+.page-shell {
+    min-height: calc(100vh - 120px);
+}
+
     </style>
 </head>
 

@@ -49,6 +49,7 @@ class AdminController extends Controller
 
         // choose selected team id (query param or first)
         $selectedTeamId = $r->team_id ?? ($teams->first()->team_id ?? null);
+        $employees = DB::table('employee_tbl')->select('emp_id','emp_name')->orderBy('emp_name')->get();
 
         $clients = Client::orderBy('client_company_name')->get();
 
@@ -99,6 +100,7 @@ class AdminController extends Controller
             'members' => $members,
             'assignments' => $assignments,
             'clients' => $clients,
+            'employees' => $employees,
             'summary' => $summary
         ]);
     }

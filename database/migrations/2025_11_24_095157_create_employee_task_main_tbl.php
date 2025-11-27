@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->text('member_remark')->nullable();
             $table->timestamps();
 
-            $table->foreign('task_main_id')->references('id')->on('task_main_tbl')->onDelete('cascade');
+            $table->foreign('task_main_id')->references('id')->on('task_main_tbl');
         });
     }
 

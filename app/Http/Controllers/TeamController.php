@@ -28,6 +28,10 @@ class TeamController extends Controller
         ]);
 
         Team::create($data);
+        // redirect back to admin dashboard (if that is the primary place), else team.index
+        if(request()->has('from_admin')) {
+            return redirect()->route('admin.dashboard')->with('success', 'Team created.');
+        }
         return redirect()->route('team.index')->with('success', 'Team created.');
     }
 
@@ -44,28 +48,70 @@ class TeamController extends Controller
         ]);
 
         $team->update($data);
+        // if request originates from admin dashboard we redirect back there with selected team
+        if($request->get('from_admin')){
+            return redirect()->route('admin.dashboard', ['team_id' => $team->id])->with('success','Team updated.');
+        }
+
         return redirect()->route('team.index')->with('success', 'Team updated.');
     }
 
     public function destroy(Team $team)
     {
+        // Optional: check for associations before delete (safe deletion)
         $team->delete();
+        // if delete triggered from admin dashboard, redirect back there
+        if(request()->get('from_admin')){
+            return redirect()->route('admin.dashboard')->with('success','Team deleted.');
+        }
         return redirect()->route('team.index')->with('success', 'Team deleted.');
     }
 
-    // Members management UI for a single team
-    public function members(Team $team)
+    /**
+     * Members management UI for a single team.
+     * If request expects JSON, return structured members + employees for AJAX.
+     * Otherwise return full blade (legacy).
+     */
+    public function members(Request $request, Team $team)
     {
         // employees list from existing employee_tbl
         $employees = DB::table('employee_tbl')->select('emp_id', 'emp_name')->orderBy('emp_name')->get();
 
-        // current members
+        // current members (with employee relation if available)
         $members = TeamMember::where('team_id', $team->id)->get();
 
+        // If client requests JSON (AJAX fetching), return structured JSON
+        if ($request->wantsJson() || $request->ajax()) {
+            // prepare member list with friendly name
+            $membersJson = $members->map(function($m){
+                $emp = DB::table('employee_tbl')->where('emp_id', $m->emp_id)->first();
+                return [
+                    'id' => $m->id,
+                    'emp_id' => $m->emp_id,
+                    'employee_name' => $emp ? $emp->emp_name : null,
+                    'is_leader' => (bool)$m->is_leader,
+                ];
+            })->values();
+
+            return response()->json([
+                'team' => [
+                    'id' => $team->id,
+                    'team_name' => $team->team_name,
+                    'description' => $team->description,
+                ],
+                'employees' => $employees,
+                'members' => $membersJson,
+            ]);
+        }
+
+        // Legacy: return blade (if you still use the separate team.members view elsewhere)
         return view('team.members', compact('team', 'employees', 'members'));
     }
 
-    // add a member to the team
+    /**
+     * addMember: POST /team/{team}/members
+     * Redirects back to admin.dashboard with team context so dashboard remains active.
+     */
     public function addMember(Request $request, Team $team)
     {
         $data = $request->validate([
@@ -73,7 +119,6 @@ class TeamController extends Controller
             'is_leader' => 'nullable|boolean',
         ]);
 
-        // if is_leader then clear other leaders
         if (!empty($data['is_leader'])) {
             TeamMember::where('team_id', $team->id)->update(['is_leader' => false]);
         }
@@ -84,13 +129,19 @@ class TeamController extends Controller
             'is_leader' => !empty($data['is_leader']),
         ]);
 
-        return back()->with('success', 'Member added.');
+        // On success, redirect back to admin dashboard keeping the team selected
+        return redirect()->route('admin.dashboard', ['team_id' => $team->id])->with('success', 'Member added.');
     }
 
-    public function removeMember(Team $team, $memberId)
+    /**
+     * removeMember: DELETE /team/{team}/members/{member}
+     * Redirects back to admin.dashboard to keep user on same page.
+     */
+    public function removeMember(Request $request, Team $team, $memberId)
     {
         $m = TeamMember::where('team_id', $team->id)->where('id', $memberId)->first();
         if ($m) $m->delete();
-        return back()->with('success', 'Member removed.');
+
+        return redirect()->route('admin.dashboard', ['team_id' => $team->id])->with('success', 'Member removed.');
     }
 }

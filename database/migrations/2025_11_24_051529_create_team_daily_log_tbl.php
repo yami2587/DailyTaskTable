@@ -23,8 +23,8 @@ return new class extends Migration {
             $table->timestamps();
 
             // Safe FK only to our tables
-            $table->foreign('task_id')->references('id')->on('task_tbl')->onDelete('cascade');
-            $table->foreign('team_id')->references('id')->on('team_tbl')->onDelete('cascade');
+            $table->foreign('task_id')->references('id')->on('task_tbl');
+            $table->foreign('team_id')->references('id')->on('team_tbl');
         });
     }
 

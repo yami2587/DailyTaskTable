@@ -21,7 +21,7 @@ return new class extends Migration {
             $table->boolean('is_submitted')->default(false); // whether member submitted status/remark
             $table->timestamps();
 
-            $table->foreign('sheet_id')->references('id')->on('team_daily_sheet_tbl')->onDelete('cascade');
+            $table->foreign('sheet_id')->references('id')->on('team_daily_sheet_tbl');
         });
     }
 

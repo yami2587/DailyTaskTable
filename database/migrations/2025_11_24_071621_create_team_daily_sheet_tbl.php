@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->text('target_text')->nullable(); // single textarea target
             $table->timestamps();
 
-            $table->foreign('team_id')->references('id')->on('team_tbl')->onDelete('cascade');
+            $table->foreign('team_id')->references('id')->on('team_tbl');
             $table->unique(['team_id', 'sheet_date']);
         });
     }
