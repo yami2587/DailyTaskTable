@@ -1,13 +1,15 @@
 <?php
 
 namespace App\Models;
+use SoftDeletes;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Team extends Model
-{
-    protected $table = 'team_tbl';
+{ 
 
+    protected $table = 'team_tbl';
+use SoftDeletes;
     protected $fillable = [
         'team_name',
         'description'

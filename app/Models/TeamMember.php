@@ -1,11 +1,12 @@
 <?php
 
 namespace App\Models;
+use SoftDeletes;
 
 use Illuminate\Database\Eloquent\Model;
 
 class TeamMember extends Model
-{
+{ use SoftDeletes;
     protected $table = 'team_members_tbl';
     protected $primaryKey = 'id';
     public $timestamps = false;
@@ -27,4 +28,5 @@ class TeamMember extends Model
     {
         return $this->belongsTo(Team::class, 'team_id', 'team_id');
     }
+    
 }
