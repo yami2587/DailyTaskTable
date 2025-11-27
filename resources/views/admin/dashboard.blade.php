@@ -114,8 +114,8 @@
             width: 260px;
             position: sticky;
             top: 20px;
-                height: calc(100vh - 150px);
-    overflow-y: auto !important;
+            height: calc(100vh - 150px);
+            overflow-y: auto !important;
             overflow-y: auto;
             padding-right: 6px;
             background: transparent;
@@ -299,6 +299,151 @@
                 order: 1;
             }
         }
+        /*  */
+        /* -------------------------------------------------
+   PREMIUM CARD + INTERACTION UPGRADE (no layout change)
+--------------------------------------------------- */
+
+/* Smooth hover glow for all cards */
+.card-surface,
+.member-card,
+.task-card {
+    transition: all .25s ease-in-out;
+    border-radius: 14px !important;
+    background: #ffffffee !important;
+    backdrop-filter: blur(6px);
+}
+
+.card-surface:hover,
+.member-card:hover,
+.task-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 26px rgba(0,0,0,0.08);
+}
+
+/* Slight elevated shadow for main container */
+.page-shell {
+    border-radius: 20px !important;
+    background: #ffffffcc;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.06) !important;
+}
+
+
+/* -------------------------------------------------
+   ICON CARDS (Better interactive look)
+--------------------------------------------------- */
+
+.icon-flat {
+    border-radius: 12px !important;
+    transition: 0.2s ease;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+}
+
+.icon-flat:hover {
+    transform: scale(1.07);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+}
+
+
+/* -------------------------------------------------
+   TEAM LIST ITEM UPGRADE
+--------------------------------------------------- */
+
+.team-item {
+    transition: 0.25s ease;
+    border-radius: 12px !important;
+    background: #f8f8ff;
+}
+
+.team-item:hover {
+    background: #eef0ff !important;
+    transform: translateX(4px);
+}
+
+.team-item.active {
+    background: linear-gradient(90deg, #6366F1, #8b5cf6) !important;
+    box-shadow: 0 8px 20px rgba(99,102,241,0.35);
+}
+
+
+/* -------------------------------------------------
+   SUMMARY CARDS — make uniform + premium
+--------------------------------------------------- */
+
+.summary-card {
+    padding: 14px;
+    border-radius: 12px;
+    background: #ffffffdd;
+    border: 1px solid #e7e7f9;
+    text-align: center;
+    transition: 0.25s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.07);
+}
+
+
+/* -------------------------------------------------
+   Buttons — smooth, rounded, modern
+--------------------------------------------------- */
+
+.btn {
+    transition: 0.25s ease;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+/* "Delete" button gets danger gradient */
+.btn-danger {
+    background: linear-gradient(90deg, #ef4444, #b91c1c) !important;
+    border: none !important;
+}
+
+
+/* -------------------------------------------------
+   Task Status – more punchy gradients
+--------------------------------------------------- */
+
+.task-status.completed {
+    background: linear-gradient(135deg, #10B981, #06c16b) !important;
+}
+
+.task-status.in_progress {
+    background: linear-gradient(135deg, #F59E0B, #e28a00) !important;
+}
+
+.task-status.not_completed {
+    background: linear-gradient(135deg, #EF4444, #d42020) !important;
+}
+
+
+/* -------------------------------------------------
+   Smooth fade for panels
+--------------------------------------------------- */
+
+.tab-panel {
+    animation: fadeSlide 0.35s ease;
+}
+
+@keyframes fadeSlide {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
     </style>
 
     <div class="admin-wrap fade-soft">
@@ -325,7 +470,7 @@
                 @endphp
 
                 <div class="d-flex gap-2 ms-2">
-                    @foreach($days as $d)
+                    @foreach ($days as $d)
                         <a href="{{ route('admin.dashboard', ['team_id' => $selectedTeamId, 'date' => $d]) }}"
                             class="btn btn-sm {{ $d == $date ? 'btn-primary' : 'btn-outline-primary' }}"
                             style="border-radius:50px; font-weight:600;">
@@ -349,35 +494,8 @@
                 <div class="admin-grid">
                     {{-- SIDEBAR: teams --}}
                     <div class="sidebar fade-soft">
-                        <div style="margin-bottom:8px; font-weight:700;">Teams</div>
-                        <div class="list-group mb-3">
-                            @foreach($teams as $t)
-                                @php
-                                    $tid = $t->id ?? $t->team_id;
-                                    $active = ($tid == $selectedTeamId);
-                                @endphp
-
-                                {{-- important: always include team id in route/url to avoid UrlGenerationException --}}
-                                <a href="{{ route('admin.dashboard', ['team_id' => $tid, 'date' => $date]) }}"
-                                    class="team-item {{ $active ? 'active' : '' }}">
-                                    <div style="display:flex; gap:10px; align-items:center;">
-                                        <div class="icon-flat" aria-hidden="true">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                                viewBox="0 0 16 16">
-                                                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z" />
-                                                <path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-                                            </svg>
-                                        </div>
-                                        <div style="font-weight:600;">{{ $t->team_name }}</div>
-                                    </div>
-                                    <div class="small text-muted">{{ \App\Models\TeamMember::where('team_id', $tid)->count() }}
-                                        members</div>
-                                </a>
-                            @endforeach
-                        </div>
-
                         {{-- Summary: only shows when a team is selected (keeps original behavior) --}}
-                        @if($selectedTeamId)
+                        @if ($selectedTeamId)
                             <div style="margin-top:6px;">
                                 <div style="font-weight:700; margin-bottom:6px;">Summary
                                     ({{ \Carbon\Carbon::parse($date)->format('d M, Y') }})</div>
@@ -408,17 +526,48 @@
                                 </div>
                             </div>
                         @endif
+                        <div style="margin-bottom:8px; font-weight:700;">Teams</div>
+                        <div class="list-group mb-3">
+                            @foreach ($teams as $t)
+                                @php
+                                    $tid = $t->id ?? $t->team_id;
+                                    $active = $tid == $selectedTeamId;
+                                @endphp
+
+                                {{-- important: always include team id in route/url to avoid UrlGenerationException --}}
+                                <a href="{{ route('admin.dashboard', ['team_id' => $tid, 'date' => $date]) }}"
+                                    class="team-item {{ $active ? 'active' : '' }}">
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <div class="icon-flat" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z" />
+                                                <path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                                            </svg>
+                                        </div>
+                                        <div style="font-weight:600;">{{ $t->team_name }}</div>
+                                    </div>
+                                    <div class="small text-muted">
+                                        {{ \App\Models\TeamMember::where('team_id', $tid)->count() }}
+                                        members</div>
+                                </a>
+                            @endforeach
+                        </div>
+
+
                     </div>
 
                     {{-- MAIN PANE: Reports & Teams panels (show/hide via JS) --}}
                     <div class="pane fade-soft" id="panel-reports">
-                        @if(!$selectedTeamId)
-                            <div class="alert alert-secondary fade-soft">No team selected. Please choose a team from the left.
+                        @if (!$selectedTeamId)
+                            <div class="alert alert-secondary fade-soft">No team selected. Please choose a team from the
+                                left.
                             </div>
                         @else
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div>
-                                    <h5 style="margin:0;">Team: {{ $sheet->team->team_name ?? 'Team ' . $selectedTeamId }}</h5>
+                                    <h5 style="margin:0;">Team: {{ $sheet->team->team_name ?? 'Team ' . $selectedTeamId }}
+                                    </h5>
                                     <div class="small">Date: {{ \Carbon\Carbon::parse($date)->format('d M, Y') }}</div>
                                 </div>
 
@@ -441,7 +590,7 @@
                                 </div>
 
                                 <div class="mt-3 row g-2">
-                                    @foreach($members as $m)
+                                    @foreach ($members as $m)
                                         <div class="col-12 col-md-6">
                                             <div class="member-card fade-soft">
                                                 <div class="icon-flat" aria-hidden="true">
@@ -455,12 +604,13 @@
                                                 <div style="margin-left:6px;">
                                                     <div style="font-weight:700;">
                                                         {{ $m->employee->emp_name ?? $m->emp_id }}
-                                                        @if($m->is_leader)
+                                                        @if ($m->is_leader)
                                                             <span class="small text-primary"> — Leader</span>
                                                         @endif
                                                     </div>
-                                                    @if(!empty($m->employee->emp_designation ?? false))
-                                                        <div class="small text-muted">{{ $m->employee->emp_designation }}</div>
+                                                    @if (!empty($m->employee->emp_designation ?? false))
+                                                        <div class="small text-muted">{{ $m->employee->emp_designation }}
+                                                        </div>
                                                     @endif
                                                 </div>
 
@@ -472,7 +622,7 @@
                                         </div>
                                     @endforeach
 
-                                    @if($members->isEmpty())
+                                    @if ($members->isEmpty())
                                         <div class="col-12">
                                             <div class="small text-muted">No members found for this team.</div>
                                         </div>
@@ -482,27 +632,30 @@
 
                             {{-- Tasks grouped by member --}}
                             <div>
-                                @if(!$sheet)
+                                @if (!$sheet)
                                     <div class="alert alert-warning fade-soft">No sheet exists for this date.</div>
                                 @endif
 
-                                @if($sheet && $assignments->isEmpty())
+                                @if ($sheet && $assignments->isEmpty())
                                     <div class="alert alert-info fade-soft">No tasks added for today.</div>
                                 @endif
 
-                                @if($sheet && $assignments->isNotEmpty())
+                                @if ($sheet && $assignments->isNotEmpty())
                                     @php $grouped = $assignments->groupBy('member_emp_id'); @endphp
 
-                                    @foreach($grouped as $memberId => $rows)
+                                    @foreach ($grouped as $memberId => $rows)
                                         @php
                                             $mem = $members->firstWhere('emp_id', $memberId);
-                                            $name = $mem ? ($mem->employee->emp_name ?? $memberId) : $memberId;
+                                            $name = $mem ? $mem->employee->emp_name ?? $memberId : $memberId;
                                         @endphp
 
-                                        <div class="mt-3" style="font-weight:800; display:flex; gap:8px; align-items:center;">
-    <div class="icon-flat" style="width:40px;height:40px; display:flex; align-items:center; justify-content:center;">
-     
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
+                                        <div class="mt-3"
+                                            style="font-weight:800; display:flex; gap:8px; align-items:center;">
+                                            <div class="icon-flat"
+                                                style="width:40px;height:40px; display:flex; align-items:center; justify-content:center;">
+
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                                    fill="currentColor">
                                                     <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z" />
                                                     <path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
                                                 </svg>
@@ -512,14 +665,15 @@
                                             </div>
                                         </div>
 
-                                        @foreach($rows as $a)
+                                        @foreach ($rows as $a)
                                             <div class="task-card fade-soft">
                                                 <div class="task-left">
                                                     <div class="task-title">
                                                         {{ optional($clients->firstWhere('client_id', $a->client_id))->client_company_name ?? '—' }}
                                                     </div>
-                                                    <div class="task-desc" title="{{ $a->leader_remark ?? $a->task_description ?? '' }}">
-                                                        {{ \Illuminate\Support\Str::limit($a->leader_remark ?? $a->task_description ?? '-', 240) }}
+                                                    <div class="task-desc"
+                                                        title="{{ $a->leader_remark ?? ($a->task_description ?? '') }}">
+                                                        {{ \Illuminate\Support\Str::limit($a->leader_remark ?? ($a->task_description ?? '-'), 240) }}
                                                     </div>
 
                                                     <div class="meta mt-2">
@@ -527,12 +681,14 @@
                                                         <span class="small">
                                                             {{ \Illuminate\Support\Str::limit($a->member_remark ?? '-', 100) }}
                                                         </span>
-                                                        @if(strlen($a->member_remark ?? '') > 100)
-                                                            &nbsp;<a href="#" class="ms-2 view-remark" data-title="Member remark"
+                                                        @if (strlen($a->member_remark ?? '') > 100)
+                                                            &nbsp;<a href="#" class="ms-2 view-remark"
+                                                                data-title="Member remark"
                                                                 data-content="{{ e($a->member_remark) }}">View</a>
                                                         @endif
-                                                        @if(strlen($a->leader_remark ?? '') > 240)
-                                                            &nbsp;<a href="#" class="ms-2 view-remark" data-title="Leader remark"
+                                                        @if (strlen($a->leader_remark ?? '') > 240)
+                                                            &nbsp;<a href="#" class="ms-2 view-remark"
+                                                                data-title="Leader remark"
                                                                 data-content="{{ e($a->leader_remark) }}">View</a>
                                                         @endif
                                                     </div>
@@ -542,7 +698,8 @@
                                                     <div><span
                                                             class="task-status {{ $a->status ?? 'not_completed' }}">{{ ucfirst($a->status ?? 'not_completed') }}</span>
                                                     </div>
-                                                    <div class="small text-muted mt-2">Submitted: {{ $a->is_submitted ? 'Yes' : 'No' }}
+                                                    <div class="small text-muted mt-2">Submitted:
+                                                        {{ $a->is_submitted ? 'Yes' : 'No' }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -558,18 +715,19 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div style="font-weight:700;">All Teams</div>
                             <div>
-                                <button class="btn btn-primary btn-sm" onclick="openCreateTeamModal()">Create Team</button>
+                                <button class="btn btn-primary btn-sm" onclick="openCreateTeamModal()">Create
+                                    Team</button>
                             </div>
                         </div>
 
                         <div class="row g-2">
-                            @foreach($teams as $t)
+                            @foreach ($teams as $t)
                                 <div class="col-12 col-md-6">
                                     <div class="card-surface fade-soft">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div>
                                                 <div style="font-weight:800;">{{ $t->team_name }}</div>
-                                                @if(!empty($t->description))
+                                                @if (!empty($t->description))
                                                     <div class="small text-muted mt-1">
                                                         {{ \Illuminate\Support\Str::limit($t->description, 160) }}</div>
                                                 @endif
@@ -584,15 +742,13 @@
                                                 <button class="btn btn-outline-primary btn-sm mb-1"
                                                     onclick="openEditTeamModal({{ $t->id }}, '{{ e($t->team_name) }}', '{{ e($t->description ?? '') }}')">Edit</button>
 
-                                                {{-- Delete: GitHub-style confirm modal --}}
-                                                <button class="btn btn-danger btn-sm"
-                                                    onclick="openDeleteTeamModal({{ $t->id }}, '{{ e($t->team_name) }}')">Delete</button>
+
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             @endforeach
-                            @if($teams->isEmpty())
+                            @if ($teams->isEmpty())
                                 <div class="col-12">
                                     <div class="small text-muted">No teams available.</div>
                                 </div>
@@ -643,6 +799,7 @@
             </form>
         </div>
     </div>
+    {{-- 444444 --}}
 
     {{-- Edit Team Modal --}}
     <div class="modal fade" id="editTeamModal" tabindex="-1" aria-hidden="true">
@@ -661,6 +818,9 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-primary">Save</button>
+                    {{-- Delete: GitHub-style confirm modal --}}
+                    <button class="btn btn-danger "
+                        onclick="openDeleteTeamModal({{ $t->id }}, '{{ e($t->team_name) }}')">Delete</button>
                 </div>
             </form>
         </div>
@@ -681,14 +841,18 @@
                             <div style="font-weight:700;">Current Members</div>
                             <div id="membersListArea" class="mt-2">
                                 {{-- dynamically filled via AJAX OR server-rendered html when page loads (fallback) --}}
-                                @foreach($members as $m)
+                                @foreach ($members as $m)
                                     <div class="d-flex align-items-center justify-content-between mb-2">
                                         <div>
                                             <div style="font-weight:700;">{{ $m->employee->emp_name ?? $m->emp_id }}</div>
-                                            <div class="small text-muted">@if($m->is_leader) Leader @endif</div>
+                                            <div class="small text-muted">
+                                                @if ($m->is_leader)
+                                                    Leader
+                                                @endif
+                                            </div>
                                         </div>
-                                        <form method="POST" class="remove-member-form" data-team-id="{{ $selectedTeamId }}"
-                                            data-member-id="{{ $m->id }}"
+                                        <form method="POST" class="remove-member-form"
+                                            data-team-id="{{ $selectedTeamId }}" data-member-id="{{ $m->id }}"
                                             action="{{ route('team.members.remove', ['team' => $selectedTeamId, 'member' => $m->id]) }}">
                                             @csrf @method('DELETE')
                                             <button class="btn btn-outline-danger btn-sm">Remove</button>
@@ -712,9 +876,10 @@
                                         @php
                                             // If employees variable was provided by controller, show them (non-invasive)
                                             $employees = $employees ?? collect();
-                                          @endphp
-                                        @foreach($employees as $e)
-                                            <option value="{{ $e->emp_id }}">{{ $e->emp_name }} ({{ $e->emp_id }})</option>
+                                        @endphp
+                                        @foreach ($employees as $e)
+                                            <option value="{{ $e->emp_id }}">{{ $e->emp_name }}
+                                                ({{ $e->emp_id }})</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -773,7 +938,7 @@
 
     {{-- ----- JS: keep behavior inline; no external redirection for member actions ----- --}}
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
 
             // Tabs show/hide
             const tabs = document.querySelectorAll('.tab-btn');
@@ -781,19 +946,22 @@
                 'reports': document.getElementById('panel-reports'),
                 'teams': document.getElementById('panel-teams')
             };
-            tabs.forEach(t => t.addEventListener('click', function () {
+            tabs.forEach(t => t.addEventListener('click', function() {
                 tabs.forEach(x => x.classList.remove('active'));
                 t.classList.add('active');
                 const target = t.dataset.tab;
-                Object.keys(panels).forEach(k => panels[k].style.display = (k === target) ? '' : 'none');
+                Object.keys(panels).forEach(k => panels[k].style.display = (k === target) ? '' :
+                'none');
             }));
 
             // remark modal handler
             document.querySelectorAll('.view-remark').forEach(el => {
-                el.addEventListener('click', function (e) {
+                el.addEventListener('click', function(e) {
                     e.preventDefault();
-                    document.getElementById('remarkModalTitle').innerText = this.dataset.title || 'Remark';
-                    document.getElementById('remarkModalBody').innerText = this.dataset.content || '';
+                    document.getElementById('remarkModalTitle').innerText = this.dataset.title ||
+                        'Remark';
+                    document.getElementById('remarkModalBody').innerText = this.dataset.content ||
+                        '';
                     new bootstrap.Modal(document.getElementById('remarkModal')).show();
                 });
             });
@@ -805,42 +973,51 @@
 
             // Remove member forms (server-rendered) - forms already have proper action attribute
             document.querySelectorAll('.remove-member-form').forEach(f => {
-                f.addEventListener('submit', function (evt) {
+                f.addEventListener('submit', function(evt) {
                     // Allow default; server will redirect back to admin.dashboard -> stays on page
                 });
             });
 
             // Add member form: action set dynamically when opening modal
-            document.getElementById('addMemberForm').addEventListener('submit', function (evt) {
+            document.getElementById('addMemberForm').addEventListener('submit', function(evt) {
                 // default submit will hit team.members.add route
             });
 
             // Edit team: form action set dynamically in function openEditTeamModal()
-            document.getElementById('editTeamForm').addEventListener('submit', function () { /* default POST works */ });
+            document.getElementById('editTeamForm').addEventListener('submit', function() {
+                /* default POST works */ });
 
             // Delete modal: enable delete button only when exact name typed
             const deleteConfirmInput = document.getElementById('deleteConfirmInput');
             const deleteTeamButton = document.getElementById('deleteTeamButton');
-            deleteConfirmInput && deleteConfirmInput.addEventListener('input', function () {
+            deleteConfirmInput && deleteConfirmInput.addEventListener('input', function() {
                 const expected = document.getElementById('deleteTeamName').innerText.trim();
                 deleteTeamButton.disabled = (this.value.trim() !== expected);
             });
 
             // Intercept addMemberForm to set action based on team id in hidden input
             const addMemberForm = document.getElementById('addMemberForm');
-            addMemberForm && addMemberForm.addEventListener('submit', function () {
+            addMemberForm && addMemberForm.addEventListener('submit', function() {
                 const teamId = document.getElementById('addMemberTeamId').value;
-                if (!teamId) { alert('Team not selected'); event.preventDefault(); return false; }
+                if (!teamId) {
+                    alert('Team not selected');
+                    event.preventDefault();
+                    return false;
+                }
                 // set action to route('team.members.add', teamId)
                 this.action = '/team/' + teamId + '/members';
             });
 
             // Intercept delete form submit: ensure confirm match (additional safety)
             const deleteForm = document.getElementById('deleteTeamForm');
-            deleteForm && deleteForm.addEventListener('submit', function (evt) {
+            deleteForm && deleteForm.addEventListener('submit', function(evt) {
                 const typed = deleteConfirmInput.value.trim();
                 const expected = document.getElementById('deleteTeamName').innerText.trim();
-                if (typed !== expected) { evt.preventDefault(); alert('Please type the exact team name to confirm deletion.'); return false; }
+                if (typed !== expected) {
+                    evt.preventDefault();
+                    alert('Please type the exact team name to confirm deletion.');
+                    return false;
+                }
             });
 
         }); // DOMContentLoaded
@@ -873,11 +1050,15 @@
         function openManageMembersModal(teamId, focusMembersList = false) {
             // set modal team name via AJAX if possible, else use text from DOM
             fetch('/team/' + teamId + '/members', {
-                headers: { 'Accept': 'application/json' }
-            })
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
                 .then(res => {
                     if (res.ok) return res.json();
-                    return res.text().then(txt => { throw txt; });
+                    return res.text().then(txt => {
+                        throw txt;
+                    });
                 })
                 .then(json => {
                     // json: { team: {...}, employees: [...], members: [...] }
