@@ -4,6 +4,7 @@ use App\Http\Controllers\DailySheetController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\AdminController;
 
 Route::get('/login', function (Request $r) {
     if ($r->has('id')) {
@@ -14,6 +15,10 @@ Route::get('/login', function (Request $r) {
                 'emp_name' => $emp->emp_name,
                 'employee_name' => $emp->emp_name,
             ]);
+            if ($emp->emp_id == '1') {
+                session(['is_admin' => true]);
+            }
+
             return redirect('/dashboard');
         }
         return redirect()->back()->with('success', 'Invalid Employee ID');
@@ -45,6 +50,14 @@ Route::middleware(['employee.auth'])->group(function () {
     Route::get('/dashboard/mine', [DailySheetController::class, 'myDashboard'])->name('dashboard.mine');
 });
 
+// Admin routes (super admin)
+Route::middleware(['employee.auth'])->group(function () {
+    // Admin dashboard (list teams, select date)
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
+
+    // convenience redirect - opens admin for team
+    Route::get('/admin/team/{team}', [AdminController::class, 'team'])->name('admin.team');
+});
 
 
 
