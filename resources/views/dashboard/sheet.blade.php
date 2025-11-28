@@ -118,6 +118,61 @@
     word-wrap: break-word;
     font-size: 14px;
 }
+/*  */
+/* Responsive fix for assignment cards */
+.task-row {
+    display: flex;
+    flex-wrap: wrap;  /* allow wrapping on small screens */
+    justify-content: space-between;
+}
+
+/* Left content should take full width on small screens */
+.task-row > div:first-child {
+    flex: 1 1 100%;
+}
+
+/* Right action buttons column */
+.task-row > .d-flex {
+    flex: 0 0 auto;
+    margin-top: 10px;
+}
+
+/* Improve layout for screens below tablet */
+@media(max-width: 768px) {
+
+    .task-row {
+        padding: 12px;
+        gap: 8px;
+    }
+
+    .task-row > div:first-child {
+        order: 1;
+        width: 100%;
+    }
+
+    .task-row > .d-flex {
+        order: 2;
+        width: 100%;
+        display: flex !important;
+        justify-content: flex-start !important;
+        gap: 10px;
+    }
+
+    .task-row button {
+        width: auto;
+    }
+}
+
+/* Extra small screens */
+@media(max-width: 480px) {
+    .task-row {
+        padding: 12px 10px;
+    }
+
+    .task-row > .d-flex {
+        flex-wrap: wrap;
+    }
+}
 
 </style>
 
@@ -186,9 +241,10 @@
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div>
                                                 <div style="font-weight:700;">{{ $memberName }}</div>
-                                                <div class="small">ID: {{ $memberId }}
+                                                <div class="small">
+                                                    {{-- ID: {{ $memberId }} --}}
                                                     @if ($m->is_leader)
-                                                        — <span><!-- leader icon --><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z"/><path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg></span>
+                                                         <span><!-- leader icon --><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z"/><path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg></span>
                                                     @endif
                                                 </div>
                                             </div>
@@ -432,11 +488,11 @@
                                         @php $e = $tm->employee ?? null; $name = $e->emp_name ?? $tm->emp_id; @endphp
                                         <div class="member-row">
                                             <div><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8"/></svg></div>
-                                            <div style="margin-left:8px;">
+                                            <div style="margin-left:2px;">
                                                 <div style="font-weight:600;">{{ $name }}</div>
-                                                <div class="small">ID: {{ $tm->emp_id }}</div>
+                                                {{-- <div class="small">ID: {{ $tm->emp_id }}</div> --}}
                                             </div>
-                                            <div class="ms-auto">@if($tm->is_leader)<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z"/><path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>@endif</div>
+                                            <div  style="margin-left:2px;">@if($tm->is_leader)<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z"/><path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>@endif</div>
                                         </div>
                                     @endforeach
                                 </div>
