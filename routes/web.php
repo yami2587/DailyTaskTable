@@ -137,5 +137,5 @@ Route::delete('daily-logs/{teamDailyLog}', [TeamDailyLogController::class, 'dest
 
 // Manual quick trigger (admin)
 Route::get('daily-logs/generate/{date?}', function ($date = null) {
-    return app(\App\Http\Controllers\TeamDailyLogController::class)->autoGenerateForDate($date);
+    return app(TeamDailyLogController::class)->autoGenerateForDate($date);
 })->name('daily-logs.generate');
