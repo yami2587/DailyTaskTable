@@ -3,119 +3,117 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\TeamDailySheet;
 use App\Models\TeamDailyAssignment;
 use App\Models\Client;
-use App\Models\TaskMain;
-use App\Models\EmployeeTaskMain;
+use App\Models\Employee;
 use Carbon\Carbon;
 
 class AdminController extends Controller
 {
-    /**
-     * Admin dashboard index.
-     * Shows list of teams (sidebar). When a team is selected it shows:
-     *  - team members
-     *  - sheet for selected date (if exists)
-     *  - assignments for that sheet grouped by member
-     */
     public function index(Request $r)
     {
-        // Simple admin guard: adapt to your auth if needed
         if (!session('is_admin')) {
-            abort(403, 'Forbidden - admin only');
+            abort(403, 'Forbidden – Admin only');
         }
 
-        $date = $r->date ?? date('Y-m-d');
+        $date = $r->date ?? now()->toDateString();
 
-        // Try to load Teams via Team model if it exists, otherwise derive from TeamMember
-        $teams = [];
-        try {
-            $teamModel = app()->make(\App\Models\Team::class);
-            $teams = \App\Models\Team::orderBy('team_name')->get();
-        } catch (\Throwable $e) {
-            // fallback: distinct team ids from TeamMember
-            $teamIds = TeamMember::select('team_id')->distinct()->pluck('team_id');
-            $teams = collect();
-            foreach ($teamIds as $tid) {
-                $teams->push((object)[
-                    'team_id' => $tid,
-                    'team_name' => 'Team ' . $tid
-                ]);
-            }
+        /* ----------------------------------------------------
+         * 1. Fetch all teams (Eloquent)
+         * ---------------------------------------------------- */
+        $teams = Team::orderBy('team_name')
+            ->select('id', 'team_name')
+            ->get();
+
+        /* ----------------------------------------------------
+         * 2. If NO TEAMS exist — dashboard must load cleanly
+         * ---------------------------------------------------- */
+        if ($teams->isEmpty()) {
+
+            return view('admin.dashboard', [
+                'teams'          => collect(), // empty
+                'selectedTeamId' => null,
+                'date'           => $date,
+                'sheet'          => null,
+                'members'        => collect(),
+                'assignments'    => collect(),
+                'clients'        => Client::orderBy('client_company_name')->get(),
+                'employees'      => Employee::orderBy('emp_name')->get(),
+                'summary'        => [
+                    'total_tasks'   => 0,
+                    'completed'     => 0,
+                    'in_progress'   => 0,
+                    'not_completed' => 0
+                ]
+            ]);
         }
 
-        // choose selected team id (query param or first)
-        $selectedTeamId = $r->team_id ?? ($teams->first()->team_id ?? null);
-        $employees = DB::table('employee_tbl')->select('emp_id','emp_name')->orderBy('emp_name')->get();
+        /* ----------------------------------------------------
+         * 3. Selected team (fallback to first team)
+         * ---------------------------------------------------- */
+        $selectedTeamId = $r->team_id ?? $teams->first()->id;
 
-        $clients = Client::orderBy('client_company_name')->get();
+        /* ----------------------------------------------------
+         * 4. Members of this team
+         * ---------------------------------------------------- */
+        $members = TeamMember::with('employee')
+            ->where('team_id', $selectedTeamId)
+            ->orderByDesc('is_leader')
+            ->get();
 
-        $sheet = null;
-        $members = collect();
+        /* ----------------------------------------------------
+         * 5. Today’s sheet for that team
+         * ---------------------------------------------------- */
+        $sheet = TeamDailySheet::where('team_id', $selectedTeamId)
+            ->where('sheet_date', $date)
+            ->first();
+
         $assignments = collect();
         $summary = [
-            'total_tasks' => 0,
-            'completed' => 0,
-            'in_progress' => 0,
+            'total_tasks'   => 0,
+            'completed'     => 0,
+            'in_progress'   => 0,
             'not_completed' => 0
         ];
 
-        if ($selectedTeamId) {
-            // members
-            $members = TeamMember::with('employee')
-                ->where('team_id', $selectedTeamId)
-                ->orderBy('is_leader', 'desc')
+        /* ----------------------------------------------------
+         * 6. If sheet exists → load assignments
+         * ---------------------------------------------------- */
+        if ($sheet) {
+            $assignments = TeamDailyAssignment::where('sheet_id', $sheet->id)
+                ->orderBy('member_emp_id')
                 ->get();
 
-            // sheet for date
-            $sheet = TeamDailySheet::where('team_id', $selectedTeamId)
-                ->where('sheet_date', $date)
-                ->first();
-
-            if ($sheet) {
-                // assignments for this sheet (group by member)
-                $assignments = TeamDailyAssignment::where('sheet_id', $sheet->id)
-                    ->orderBy('member_emp_id')
-                    ->get();
-
-                // summary counts
-                $summary['total_tasks'] = $assignments->count();
-                $summary['completed'] = $assignments->where('status', 'completed')->count();
-                $summary['in_progress'] = $assignments->where('status', 'in_progress')->count();
-                $summary['not_completed'] = $assignments->where('status', 'not_completed')->count();
-            } else {
-                // no sheet found for date
-                $assignments = collect();
-            }
+            $summary = [
+                'total_tasks'   => $assignments->count(),
+                'completed'     => $assignments->where('status', 'completed')->count(),
+                'in_progress'   => $assignments->where('status', 'in_progress')->count(),
+                'not_completed' => $assignments->where('status', 'not_completed')->count()
+            ];
         }
 
+        /* ----------------------------------------------------
+         * 7. Load clients & employees for modals
+         * ---------------------------------------------------- */
+        $clients   = Client::orderBy('client_company_name')->get();
+        $employees = Employee::orderBy('emp_name')->get();
+
+        /* ----------------------------------------------------
+         * 8. Return safe dashboard view
+         * ---------------------------------------------------- */
         return view('admin.dashboard', [
-            'teams' => $teams,
+            'teams'          => $teams,
             'selectedTeamId' => $selectedTeamId,
-            'date' => $date,
-            'sheet' => $sheet,
-            'members' => $members,
-            'assignments' => $assignments,
-            'clients' => $clients,
-            'employees' => $employees,
-            'summary' => $summary
+            'date'           => $date,
+            'sheet'          => $sheet,
+            'members'        => $members,
+            'assignments'    => $assignments,
+            'clients'        => $clients,
+            'employees'      => $employees,
+            'summary'        => $summary
         ]);
     }
-
-    /**
-     * Optional: convenience route that directly loads a specific team/day
-     * Redirects to index with team_id & date query params.
-     */
-    public function team(Request $r, $teamId)
-    {
-        if (!session('is_admin')) {
-            abort(403, 'Forbidden - admin only');
-        }
-        $date = $r->date ?? date('Y-m-d');
-        return redirect()->route('admin.dashboard', ['team_id' => $teamId, 'date' => $date]);
-    }
 }
-    

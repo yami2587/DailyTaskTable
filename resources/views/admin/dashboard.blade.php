@@ -1,4 +1,8 @@
 {{-- resources/views/admin/dashboard.blade.php --}}
+@php
+    $teams = $teams ?? collect();
+@endphp
+
 @extends('layouts.app')
 
 @section('content')
@@ -846,7 +850,7 @@
     {{-- Edit Team Modal --}}
     <div class="modal fade" id="editTeamModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form id="editTeamForm" method="POST" class="modal-content">
+            <form id="editTeamForm" method="POST" class="modal-content" data-tid="" data-tname="">
                 @csrf @method('PUT')
                 <div class="modal-header">
                     <h5 class="modal-title">Edit Team</h5>
@@ -860,9 +864,14 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-primary">Save</button>
-                    {{-- Delete: GitHub-style confirm modal --}}
-                    <button class="btn btn-danger "
-                        onclick="openDeleteTeamModal({{ $t->id }}, '{{ e($t->team_name) }}')">Delete</button>
+                    {{-- Delete: GitHub-style confirm modal --}}<button type="button" class="btn btn-danger"
+    onclick="openDeleteTeamModal(
+        document.getElementById('editTeamForm').dataset.tid,
+        document.getElementById('editTeamForm').dataset.tname
+    )">
+    Delete
+</button>
+
                 </div>
             </form>
         </div>
@@ -1087,6 +1096,20 @@
             document.getElementById('deleteTeamButton').disabled = true;
             new bootstrap.Modal(document.getElementById('deleteTeamModal')).show();
         }
+        function openEditTeamModal(id, name, desc) {
+    const form = document.getElementById('editTeamForm');
+    form.action = '/team/' + id;
+
+    // NEW: attach values so delete button can use them
+    form.dataset.tid = id;
+    form.dataset.tname = name;
+
+    document.getElementById('edit_team_name').value = name;
+    document.getElementById('edit_team_description').value = desc;
+
+    new bootstrap.Modal(document.getElementById('editTeamModal')).show();
+}
+
 
         // Open manage members modal. If `focusMembersTab` true, switch to teams tab first (optional)
         function openManageMembersModal(teamId, focusMembersList = false) {
