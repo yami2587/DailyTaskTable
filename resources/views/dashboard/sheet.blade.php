@@ -524,8 +524,10 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content remark-modal">
             <div class="modal-header">
-                <h5 class="modal-title">Full Remark</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">Full Remark </h5>
+                <small>click outside the box to close</small>
+                
+                {{-- <button class="btn-close" data-bs-dismiss="modal"></button> --}}
             </div>
             <div class="modal-body" id="remarkModalBody" style="white-space:pre-wrap;"></div>
         </div>

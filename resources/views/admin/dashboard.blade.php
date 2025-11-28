@@ -99,15 +99,25 @@
         }
 
         /* FIXED-SIDEBAR layout: occupy full height inside page-shell */
-        .fixed-admin-layout {
+        /* .fixed-admin-layout {
             height: calc(100vh - 150px);
-            /* approximate header + container */
-            overflow: visible;
+                overflow: visible;
         }
 
         .admin-grid {
             height: 100%;
-        }
+        } */
+.fixed-admin-layout {
+    min-height: 100%;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+.admin-grid {
+    height: auto !important;
+    align-items: flex-start;
+}
+
 
         /* sidebar */
         .sidebar {
@@ -449,8 +459,8 @@
     <div class="admin-wrap fade-soft">
         <div class="header-row">
             <div>
-                <div class="title">Admin: Team Daily Reports</div>
-                <div class="sub">Super-admin — browse teams, sheets & manage teams</div>
+                <div class="title">Team Daily Reports</div>
+                <div class="sub">Browse teams, sheets & manage teams</div>
             </div>
 
             <div class="d-flex gap-2 align-items-center">
@@ -615,7 +625,7 @@
                                                 </div>
 
                                                 <div class="ms-auto small">
-                                                    Assigned today:
+                                                    Task:
                                                     <strong>{{ $assignments->where('member_emp_id', $m->emp_id)->count() }}</strong>
                                                 </div>
                                             </div>
@@ -629,6 +639,37 @@
                                     @endif
                                 </div>
                             </div>
+                            {{-- Team Daily Target (Admin) --}}
+@if($sheet)
+<div class="card-surface mb-3 fade-soft">
+    <div class="d-flex justify-content-between align-items-center">
+        <div style="font-weight:700;">Team Daily Target</div>
+        <div class="small text-muted">
+            {{ \Carbon\Carbon::parse($date)->format('d M, Y') }}
+        </div>
+    </div>
+
+    {{-- Editable ONLY if date is today --}}
+    @if(\Carbon\Carbon::parse($date)->isToday())
+        <textarea id="admin_team_target" class="form-control mt-2"
+                  rows="4">{{ $sheet->target_text ?? '' }}</textarea>
+
+        <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-primary btn-sm"
+                onclick="saveAdminTeamTarget({{ $sheet->id }})">Save Target</button>
+
+            <button class="btn btn-outline-secondary btn-sm"
+                onclick="document.getElementById('admin_team_target').value=''">Reset</button>
+        </div>
+    @else
+        {{-- Read-only for past dates --}}
+        <div class="small mt-2" style="min-height:80px; white-space:pre-wrap;">
+            {{ $sheet->target_text ?? 'No target set for this day.' }}
+        </div>
+    @endif
+</div>
+@endif
+
 
                             {{-- Tasks grouped by member --}}
                             <div>
@@ -768,7 +809,8 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="remarkModalTitle">Remark</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <small>click outside the box to close</small>
+                    {{-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> --}}
                 </div>
                 <div class="modal-body" id="remarkModalBody" style="white-space:pre-wrap;"></div>
                 <div class="modal-footer">
@@ -1104,7 +1146,38 @@
                     document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
                     new bootstrap.Modal(document.getElementById('manageMembersModal')).show();
                 });
+
+
         }
+        // Save Team Target (Admin Dashboard)
+async function saveAdminTeamTarget(sheetId) {
+    const val = document.getElementById('admin_team_target').value || '';
+    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    try {
+        const res = await fetch("/sheet/save_day/" + sheetId, {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": csrf,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({ today_target: val })
+        });
+
+        if (!res.ok) {
+            alert("Failed to save daily target.");
+            return;
+        }
+
+        alert("Team daily target saved!");
+        location.reload();
+
+    } catch (e) {
+        console.error(e);
+        alert("Network error");
+    }
+}
+
     </script>
 
 @endsection

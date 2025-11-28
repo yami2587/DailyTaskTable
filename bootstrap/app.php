@@ -3,7 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-
+use App\Http\Middleware\EmployeeAuthMiddleware;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__ . '/../routes/web.php',
@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     // })
     ->withMiddleware(function ($middleware) {
         $middleware->alias([
-            'employee.auth' => \App\Http\Middleware\EmployeeAuthMiddleware::class,
+            'employee.auth' => EmployeeAuthMiddleware::class,
         ]);
     })
 
