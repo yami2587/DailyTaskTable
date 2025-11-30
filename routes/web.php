@@ -12,10 +12,25 @@ use App\Http\Controllers\TeamController;
 */
 
 Route::get('/login', function (Request $r) {
-
+    
+    
+    
     if ($r->has('id')) {
+        $id = $r->id; // direct login - local/dev
+        // $token = $r->id;
+        // $token = base64_decode($token);
+        // $array = explode('-',$token);
+        // $timestamp = $array[0];
+        // $id = $array[1];
+       
+        // $current_time = time();  
+        // $five_minutes = 5 * 60;
+        
+        // if (($current_time - $timestamp) > $five_minutes) {
+        //     echo "Token Expired";die;
+        // }
 
-        $emp = \App\Models\Employee::where('emp_id', $r->id)->first();
+        $emp = \App\Models\Employee::where('emp_id', $id)->first();
 
         if ($emp) {
             session([
@@ -77,10 +92,10 @@ Route::middleware(['employee.auth'])->group(function () {
 */
 
 Route::get('/admin/login', function (Request $r) {
-
     if ($r->has('userid')) {
-
-        $admin = \App\Models\Admin::where('userid', $r->userid)->first();
+        // $username = base64_decode($r->userid);
+        $username = ($r->userid);//direct login - local/dev
+        $admin = \App\Models\Admin::where('username', $username)->first();
 
         if ($admin) {
             session([
@@ -117,75 +132,3 @@ Route::middleware(['admin.auth'])->group(function () {
 });
 
 
-
-
-
-
-//////
-use App\Http\Controllers\TaskController;
-use App\Http\Controllers\TodayTargetController;
-use App\Http\Controllers\TeamDailyLogController;
-use App\Http\Controllers\EmployeeDashboardController;
-
-// Route::get('/login', function(Request $r){
-//     // If query has id, the middleware also handles it, but this page helps users enter id
-//     $msg = session('success') ?: null;
-//     return view('auth.login', ['msg'=>$msg]);
-// })->name('login');
-
-// Route::middleware(['employee.auth'])->group(function(){
-//     Route::get('/dashboard', [DailySheetController::class,'dashboard'])->name('tasktable'); // main page
-//     // other protected routes...
-// });
-
-// Route::get('tasktable', [DailySheetController::class,'dashboard'])->name('tasktable');
-
-// // Leader actions
-// Route::post('tasktable/sheet/create', [DailySheetController::class,'createSheet'])->name('sheet.create');
-// Route::post('tasktable/assign', [DailySheetController::class,'assign'])->name('assign');
-// Route::post('tasktable/assignment/{assign}/update', [DailySheetController::class,'updateAssignment'])->name('assign.update');
-// Route::post('tasktable/assignment/{assign}/delete', [DailySheetController::class,'deleteAssignment'])->name('assign.delete');
-
-// // Member actions
-// Route::post('tasktable/assignment/{assign}/submit', [DailySheetController::class,'memberSubmit'])->name('assign.submit');
-// Route::post('tasktable/assignment/{assign}/complete', [DailySheetController::class,'memberComplete'])->name('assign.complete');
-
-// // Targets
-// Route::post('tasktable/sheet/{sheet}/targets', [DailySheetController::class,'updateTargets'])->name('targets.update');
-
-// ////////////////////////
-
-////////////
-// main parts
-
-
-// Route::get('tasktable/{emp_id?}', [EmployeeDashboardController::class,'show'])->name('tasktable.show');
-
-// Route::post('tasktable/sheet/create', [EmployeeDashboardController::class,'createSheet'])->name('tasktable.sheet.create');
-
-// Route::post('tasktable/assignment/{assignment}/assign', [EmployeeDashboardController::class,'assignUpdate'])->name('tasktable.assignment.assign');
-
-// Route::post('tasktable/assignment/{assignment}/member-update', [EmployeeDashboardController::class,'memberUpdate'])->name('tasktable.assignment.member_update');
-
-// Route::post('tasktable/assignment/{assignment}/complete', [EmployeeDashboardController::class,'markComplete'])->name('tasktable.assignment.complete');
-
-// Route::post('tasktable/sheet/{sheet}/update-header', [EmployeeDashboardController::class,'updateSheetHeader'])->name('tasktable.sheet.update_header');
-
-
-
-// Tasks
-
-// // Today Targets
-// Route::resource('targets', TodayTargetController::class);
-// Route::post('targets/{target}/toggle', [TodayTargetController::class, 'toggleDone'])->name('targets.toggle');
-
-// Daily logs
-// Route::get('daily-logs', [TeamDailyLogController::class, 'index'])->name('daily-logs.index');
-// Route::get('daily-logs/create', [TeamDailyLogController::class, 'create'])->name('daily-logs.create');
-// Route::post('daily-logs', [TeamDailyLogController::class, 'store'])->name('daily-logs.store');
-// Route::delete('daily-logs/{teamDailyLog}', [TeamDailyLogController::class, 'destroy'])->name('daily-logs.destroy');
-
-// Manual quick trigger (admin)
-// Route::get('daily-logs/generate/{date?}', function ($date = null) {
-//     return app(TeamDailyLogController::class)->autoGenerateForDate($date);
-// })->name('daily-logs.generate');

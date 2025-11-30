@@ -472,13 +472,25 @@
                                                                         <div class="row gx-2">
                                                                             <div class="col-5">
                                                                                 <label class="small label">Project</label>
-                                                                                <select name="client_id" class="input">
+                                                                                {{-- <select name="client_id" class="input">
                                                                                     <option value="">-- select --</option>
                                                                                     @foreach ($clients as $c)
                                                                                         <option value="{{ $c->client_id }}" @if(($a->client_id ?? '') == $c->client_id) selected @endif>
                                                                                             {{ $c->client_company_name }}</option>
                                                                                     @endforeach
-                                                                                </select>
+                                                                                </select> --}}
+                                                                                <select name="client_id"
+                        class="input selectpicker form-control"
+                        data-live-search="true">
+                    <option value="">-- Select Project --</option>
+
+                    @foreach ($clients as $c)
+                        <option value="{{ $c->client_id }}"
+                                @if(($a->client_id ?? '') == $c->client_id) selected @endif>
+                            {{ $c->client_company_name }}
+                        </option>
+                    @endforeach
+                </select>
                                                                             </div>
 
                                                                             <div class="col-7">
@@ -488,8 +500,9 @@
                                                                             </div>
                                                                         </div>
 
-                                                                        <label class="small label mt-2">Member remark / response (editable
-                                                                            by leader)</label>
+                                                                        <label class="small label mt-2">Member Remark / Response <small>(editable by leader)
+                                                                            </small>
+                                                                        </label>
                                                                         <textarea name="member_remark" id="leader-reply-{{ $a->id }}"
                                                                             class="input" rows="2">{{ $a->member_remark ?? '' }}</textarea>
 
@@ -523,13 +536,27 @@
                                                             <tbody id="rows-{{ $memberId }}">
                                                                 <tr class="task-input-row">
                                                                     <td>
-                                                                        <select name="client_id[]" class="input client-select">
-                                                                            <option value="">-- select Project --</option>
+                                                                        {{-- <select name="client_id[]" class="input client-select">
+                                                                           
+
+                                                                            <option value="">-- Select Project --</option>
+                                                                    
+
                                                                             @foreach ($clients as $c)
                                                                                 <option value="{{ $c->client_id }}">
                                                                                     {{ $c->client_company_name }}</option>
                                                                             @endforeach
-                                                                        </select>
+                                                                        </select> --}}
+                                                                        
+    <select name="client_id[]" class="input client-select selectpicker form-control" data-live-search="true">
+        <option value="">-- Select Project --</option>
+        @foreach ($clients as $c)
+            <option value="{{ $c->client_id }}">{{ $c->client_company_name }}</option>
+        @endforeach
+    </select>
+
+
+
                                                                     </td>
                                                                     <td><textarea name="leader_remark[]" class="input"
                                                                             rows="2"></textarea></td>
@@ -568,7 +595,7 @@
                                                     <div class="small">When ready press <strong>Submit Day Log</strong> to snapshot &
                                                         lock the sheet.</div>
                                                     <div class="mt-2"><button class="btn btn-primary"
-                                                            onclick="finalizeDay({{ $sheet->id }})">Submit Day Log</button></div>
+                                                            onclick="finalizeDay({{ $sheet->id }})">Submit Today's Task</button></div>
                                                 @endif
                                             </div>
                                             {{-- ➕➕➕➕➕➕➕➕➕➕➕unfreez buttion➕➕➕➕➕➕➕➕➕➕➕ --}}
@@ -750,8 +777,8 @@
                             </div>
                             <div class="modal-body">
                                 <p style="font-size:14px;">
-                                    To finalize and lock today's sheet, type <strong>today's date</strong>
-                                    or <strong>your name</strong> below:
+                                    To finalize and lock today's sheet, type <strong>"Confirm"</strong>
+                                     below:
                                 </p>
 
                                 <input type="text" id="finalConfirmInput" class="form-control"
@@ -794,25 +821,24 @@
                 </div> --}}
                 <!-- Simple Card-Style Confirmation Popup -->
                 <div id="taskConfirmCard" style="
-            display:none;
-            position:fixed;
-            top:0; left:0;
-            width:100%; height:100%;
-            background:rgba(0,0,0,0.3);
-            backdrop-filter:blur(4px);
-            z-index:9999;
-            align-items:center;
-            justify-content:center;
-         ">
-                    <div style="
-            background:#fff;
-            width:340px;
-            padding:20px 22px;
-            border-radius:14px;
-            box-shadow:0 10px 35px rgba(0,0,0,0.12);
-            border:1px solid rgba(99,102,241,0.2);
-            animation:scaleIn 0.18s ease-out;
-         ">
+                            display:none;
+                            position:fixed;
+                            top:0; left:0;
+                            width:100%; height:100%;
+                            background:rgba(0,0,0,0.3);
+                            backdrop-filter:blur(4px);
+                            z-index:9999;
+                            align-items:center;
+                            justify-content:center;
+                        ">
+                    <div style="background:#fff;
+                            width:340px;
+                            padding:20px 22px;
+                            border-radius:14px;
+                            box-shadow:0 10px 35px rgba(0,0,0,0.12);
+                            border:1px solid rgba(99,102,241,0.2);
+                            animation:scaleIn 0.18s ease-out;
+                        ">
                         <h5 style="margin:0 0 8px;font-weight:700;">Submit Task?</h5>
                         <p style="font-size:14px;margin:0 0 18px;">
                             Once submitted, you cannot edit this task.
@@ -858,9 +884,48 @@
                     </div>
                 </div>
 
-                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+               <!-- jQuery FIRST (NO integrity!) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Bootstrap Select CSS -->
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+
+<!-- Bootstrap Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.jQuery && typeof $.fn.selectpicker === 'function') {
+            $('.selectpicker').selectpicker();
+        } else {
+            console.warn("Selectpicker failed to load.");
+        }
+    });
+</script>
+<script>
+function openEditAssignment(id) {
+    const box = document.getElementById('edit-box-' + id);
+    if (!box) return;
+
+    box.style.display = 'block';
+
+    // Refresh bootstrap-select on this specific select inside edit block
+    if (window.jQuery && $.fn.selectpicker) {
+        $(box).find('.selectpicker').selectpicker('refresh');
+    }
+}
+</script>
+
+
+
+
 
                 <script>
+
                     /* Utility to show toast */
                     function showToast(msg, t = 1400) {
                         const el = document.getElementById('toast');
@@ -880,29 +945,29 @@
                     }
 
                     /* Add/Remove task rows (leader) */
-                    function addNewTaskRow(memberId) {
-                        const tbody = document.getElementById('rows-' + memberId);
-                        if (!tbody) return;
-                        const tr = document.createElement('tr');
-                        tr.className = 'task-input-row';
-                        tr.innerHTML = `
-            <td>
-                <select name="client_id[]" class="input client-select">
-                    <option value="">-- select Project --</option>
-                    @foreach($clients as $c)
-                        <option value="{{ $c->client_id }}">{{ addslashes($c->client_company_name) }}</option>
-                    @endforeach
-                </select>
-            </td>
-            <td><textarea name="leader_remark[]" class="input" rows="2"></textarea></td>
-            <td style="text-align:center;"><button type="button" class="btn btn-danger btn-sm" onclick="removeThisRow(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-square" viewBox="0 0 16 16">
-      <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
-      <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
-    </svg></button></td>
-        `;
-                        tbody.appendChild(tr);
-                    }
-                    function removeThisRow(btn) { const tr = btn.closest('tr'); if (tr) tr.remove(); }
+    //                 function addNewTaskRow(memberId) {
+    //                     const tbody = document.getElementById('rows-' + memberId);
+    //                     if (!tbody) return;
+    //                     const tr = document.createElement('tr');
+    //                     tr.className = 'task-input-row';
+    //                     tr.innerHTML = `
+    //         <td>
+    //             <select name="client_id[]" class="input client-select selectpicker" data-live-search="true">
+    //                 <option value="">-- Select Project --</option>
+    //                 @foreach($clients as $c)
+    //                     <option value="{{ $c->client_id }}">{{ addslashes($c->client_company_name) }}</option>
+    //                 @endforeach
+    //             </select>
+    //         </td>
+    //         <td><textarea name="leader_remark[]" class="input" rows="2"></textarea></td>
+    //         <td style="text-align:center;"><button type="button" class="btn btn-danger btn-sm" onclick="removeThisRow(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-square" viewBox="0 0 16 16">
+    //   <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
+    //   <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+    // </svg></button></td>
+    //     `;
+    //                     tbody.appendChild(tr);
+    //                 }
+    //                 function removeThisRow(btn) { const tr = btn.closest('tr'); if (tr) tr.remove(); }
 
                     /* Save tasks via AJAX (leader) */
                     async function saveTasksForMember(memberId, sheetId) {
@@ -1145,7 +1210,14 @@
                         const today = new Date().toISOString().slice(0, 10);
                         const userName = "{{ $employeeName ?? $empId }}";
 
-                        if (val !== today && val.toLowerCase() !== userName.toLowerCase()) {
+                        // if (val !== today && val.toLowerCase() !== userName.toLowerCase()) {
+                        //     const err = document.getElementById("finalConfirmError");
+                        //     err.innerText = "Incorrect — type today's date or your name.";
+                        //     err.style.display = "block";
+                        //     return;
+                        // }
+                        
+                        if (val !== "Confirm") {
                             const err = document.getElementById("finalConfirmError");
                             err.innerText = "Incorrect — type today's date or your name.";
                             err.style.display = "block";
@@ -1227,6 +1299,46 @@
                         initRemarkChecks();
                         window.setTimeout(initRemarkChecks, 250); // slight delay in case fonts load
                     });
+                   function addNewTaskRow(memberId) {
+    const tbody = document.getElementById('rows-' + memberId);
+    if (!tbody) return;
+
+    const tr = document.createElement('tr');
+    tr.className = 'task-input-row';
+
+    tr.innerHTML = `
+        <td>
+            <select name="client_id[]" class="input client-select selectpicker" data-live-search="true">
+                <option value="">-- Select Project --</option>
+                @foreach ($clients as $c)
+                    <option value="{{ $c->client_id }}">{{ addslashes($c->client_company_name) }}</option>
+                @endforeach
+            </select>
+        </td>
+        <td><textarea name="leader_remark[]" class="input" rows="2"></textarea></td>
+        <td style="text-align:center;">
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeThisRow(this)">X</button>
+        </td>
+    `;
+
+    tbody.appendChild(tr);
+
+    // Refresh bootstrap-select so the newly inserted <select> becomes searchable and styled
+    if (window.jQuery && typeof $.fn.selectpicker === 'function') {
+        $('.selectpicker').selectpicker('refresh');
+    } else {
+        console.warn('selectpicker refresh skipped: jquery or bootstrap-select missing');
+    }
+}
+
+function removeThisRow(btn) {
+    const tr = btn.closest('tr');
+    if (tr) tr.remove();
+}
+
+
+    
+
                     window.addEventListener('resize', () => { window.setTimeout(initRemarkChecks, 120); });
                 </script>
 

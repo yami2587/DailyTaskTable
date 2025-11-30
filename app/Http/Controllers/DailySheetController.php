@@ -29,7 +29,7 @@ class DailySheetController extends Controller
         // Load all clients
         $clients = Client::orderBy('client_company_name')->get();
 
-    //    member 
+        // MEMBER flow (non-leader)
         if (!$teamLeader) {
 
             $memberTeam = TeamMember::where('emp_id', $empId)->first();
@@ -45,11 +45,12 @@ class DailySheetController extends Controller
                     'members'      => collect(),
                     'clients'      => $clients,
                     'isLeader'     => false,
-                    'isFinalized'  => false
+                    // MEMBER should NOT be locked by leader finalization
+                    'isFinalized'  => false, // <<< CHANGED: force false for members
                 ]);
             }
 
-            // Sheet for today
+            // Sheet for today (if any)
             $sheet = TeamDailySheet::where('team_id', $memberTeam->team_id)
                 ->where('sheet_date', $date)
                 ->first();
@@ -64,12 +65,9 @@ class DailySheetController extends Controller
                 ->where('team_id', $memberTeam->team_id)
                 ->get();
 
-            // Freeze check
-            $isFinalized = $sheet
-                ? TaskMain::where('team_id', $sheet->team_id)
-                ->where('sheet_date', $sheet->sheet_date)
-                ->exists()
-                : false;
+            // NOTE: For members we DO NOT treat a created TaskMain as "locking" their UI.
+            // We still keep TaskMain for history but members remain able to submit.
+            $isFinalized = false; // <<< CHANGED: always false for members
 
             return view('dashboard.sheet', [
                 'empId'        => $empId,
@@ -77,14 +75,14 @@ class DailySheetController extends Controller
                 'date'         => $date,
                 'sheet'        => $sheet,
                 'assignments'  => $assignments,
-                'members'      => $teamMembers,   
+                'members'      => $teamMembers,
                 'clients'      => $clients,
                 'isLeader'     => false,
                 'isFinalized'  => $isFinalized
             ]);
         }
 
-        /*LEADER FLOW */
+        /* LEADER FLOW: (team leader viewing team dashboard) */
         $sheet = TeamDailySheet::where('team_id', $teamLeader->team_id)
             ->where('sheet_date', $date)
             ->first();
@@ -107,10 +105,10 @@ class DailySheetController extends Controller
         // Assignments for this sheet
         $assignments = TeamDailyAssignment::where('sheet_id', $sheet->id)->get();
 
-        // Freeze check
+        // Freeze check for leader view: only leader sees the sheet as finalized/locked.
         $isFinalized = TaskMain::where('team_id', $sheet->team_id)
             ->where('sheet_date', $sheet->sheet_date)
-            ->exists();
+            ->exists(); // <<< CHANGED: unchanged logic but only applied for leader
 
         return view('dashboard.sheet', [
             'empId'        => $empId,
@@ -154,11 +152,9 @@ class DailySheetController extends Controller
             ->where('team_id', $member->team_id)
             ->get();
 
-        $isFinalized = $sheet
-            ? TaskMain::where('team_id', $sheet->team_id)
-            ->where('sheet_date', $sheet->sheet_date)
-            ->exists()
-            : false;
+        // IMPORTANT: Leader's personal "myDashboard" should NOT be locked by final snapshot.
+        // Finalization only locks the leader's team dashboard, not the leader's personal submissions view.
+        $isFinalized = false; // <<< CHANGED
 
         return view('dashboard.sheet', [
             'empId'        => $empId,
@@ -166,15 +162,14 @@ class DailySheetController extends Controller
             'date'         => $date,
             'sheet'        => $sheet,
             'assignments'  => $assignments,
-            'members'      => $teamMembers,  
+            'members'      => $teamMembers,
             'clients'      => $clients,
             'isLeader'     => false,
             'isFinalized'  => $isFinalized
         ]);
     }
 
-
-    /* CREATE NEW SHEET */
+    /* CREATE NEW SHEET (unchanged) */
     public function createSheet(Request $request)
     {
         $data = $request->validate([
@@ -191,8 +186,7 @@ class DailySheetController extends Controller
         return back()->with('success', 'Sheet created.');
     }
 
-
-    /* ASSIGN NEW TASK  */
+    /* ASSIGN NEW TASK  (unchanged) */
     public function assign(Request $request)
     {
         $data = $request->validate([
@@ -223,8 +217,7 @@ class DailySheetController extends Controller
         return response()->json(['ok' => true, 'id' => $assign->id], 200);
     }
 
-
-    /* UPDATE ASSIGNMENT */
+    /* UPDATE ASSIGNMENT (unchanged) */
     public function updateAssignment(Request $request, TeamDailyAssignment $assign)
     {
         $sheet = $assign->sheet;
@@ -238,8 +231,7 @@ class DailySheetController extends Controller
         return back()->with('success', 'Updated.');
     }
 
-
-    /* DELETE ASSIGNMENT */
+    /* DELETE ASSIGNMENT (unchanged) */
     public function deleteAssignment(TeamDailyAssignment $assign)
     {
         $sheet = $assign->sheet;
@@ -253,8 +245,7 @@ class DailySheetController extends Controller
         return back()->with('success', 'Deleted.');
     }
 
-
-    /* MEMBER SUBMIT TASK (AJAX) */
+    /* MEMBER SUBMIT TASK (unchanged) */
     public function memberSubmit(Request $request, TeamDailyAssignment $assign)
     {
         $sheet = $assign->sheet;
@@ -277,10 +268,10 @@ class DailySheetController extends Controller
         return response()->json(['ok' => true], 200);
     }
 
-
     /* SAVE TARGET or FINAL SNAPSHOT */
     public function saveDayLog(Request $request, TeamDailySheet $sheet)
     {
+        // Prevent updating past dates (unchanged)
         if ($sheet->sheet_date < Carbon::today()) {
             return response()->json(['error' => 'Past sheets locked'], 422);
         }
@@ -291,7 +282,21 @@ class DailySheetController extends Controller
             return response()->json(['ok' => true], 200);
         }
 
-        // FINAL SNAPSHOT
+        // FINAL SNAPSHOT: only leader can create the TaskMain snapshot
+        $empId = session('emp_id');
+        if ($sheet->leader_emp_id != $empId) {
+            return response()->json(['error' => 'Forbidden - only leader can finalize'], 403);
+        }
+
+        // Prevent duplicate finalize for same team/date
+        $exists = TaskMain::where('team_id', $sheet->team_id)
+            ->where('sheet_date', $sheet->sheet_date)
+            ->exists();
+        if ($exists) {
+            return response()->json(['error' => 'Already finalized'], 422);
+        }
+
+        // Create snapshot records
         $taskMain = TaskMain::create([
             'team_id'       => $sheet->team_id,
             'sheet_date'    => $sheet->sheet_date,
@@ -314,7 +319,6 @@ class DailySheetController extends Controller
 
         return response()->json(['ok' => true], 200);
     }
-
 
     /* UNFREEZE (TESTING HELPER)  */
     public function unfreezeSheet(Request $request, TeamDailySheet $sheet)

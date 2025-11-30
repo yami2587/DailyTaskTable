@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TaskTable</title>
-
+    
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -34,7 +33,7 @@
             background: #fff;
             padding: 20px;
             border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
 
@@ -48,7 +47,6 @@
             cursor: pointer;
             font-size: 14px;
         }
-
         .btn:hover {
             background: #2980b9;
         }
@@ -59,9 +57,7 @@
             margin-top: 15px;
         }
 
-        table,
-        th,
-        td {
+        table, th, td {
             border: 1px solid #ddd;
             padding: 8px;
         }
@@ -89,61 +85,58 @@
         .danger {
             background: #e74c3c;
         }
-
         .danger:hover {
             background: #c0392b;
         }
-
         /* FIXES SIDEBAR JUMPING + WHITE GAP + FULL HEIGHT PAGE */
-        html,
-        body {
-            height: 100%;
-        }
+html, body {
+    height: 100%;
+}
 
-        /* Removes container padding influence on our layout */
-        .container {
-            padding: 0 !important;
-        }
+/* Removes container padding influence on our layout */
+.container {
+    padding: 0 !important;
+}
 
-        /* Ensure our admin layout fills entire viewport consistently */
-        .admin-wrap {
-            min-height: calc(100vh - 70px);
-            /* your navbar height = ~60-70px */
-            overflow: hidden;
-        }
+/* Ensure our admin layout fills entire viewport consistently */
+.admin-wrap {
+    min-height: calc(100vh - 70px); /* your navbar height = ~60-70px */
+    overflow: hidden;
+}
 
-        /* Fix sidebar sizing permanently */
-        .sidebar {
-            height: calc(100vh - 90px) !important;
-            overflow-y: auto !important;
-            padding-bottom: 40px;
-        }
+/* Fix sidebar sizing permanently */
+.sidebar {
+    height: calc(100vh - 90px) !important;
+    overflow-y: auto !important;
+    padding-bottom: 40px;
+}
 
-        /* Fix main pane scroll consistency */
-        .pane {
-            height: calc(100vh - 90px);
-            overflow-y: auto;
-            padding-right: 8px;
-        }
+/* Fix main pane scroll consistency */
+.pane {
+    height: calc(100vh - 90px);
+    overflow-y: auto;
+    padding-right: 8px;
+}
 
-        /* Fix page-shell full height always */
-        .page-shell {
-            min-height: calc(100vh - 120px);
-        }
+/* Fix page-shell full height always */
+.page-shell {
+    min-height: calc(100vh - 120px);
+}
+
     </style>
 </head>
 
 <body>
 
     <div class="navbar">
-        <h1>TaskTable Admin</h1>
-        {{-- <div>
-            <a href="/dashboard" class="btn">Dashboard</a>
+        <h1>Task Manger</h1>
+        <div>
+            {{-- <a href="/dashboard" class="btn">Dashboard</a>
             <a href="/team" class="btn">Teams</a>
             <a href="/tasks" class="btn">Tasks</a>
-            <a href="/daily-logs" class="btn">Daily Logs</a>
-            <a href="/targets" class="btn">Targets</a>
-        </div> --}}
+            <a href="/daily-logs" class="btn">Daily Logs</a> --}}
+            {{-- <a href="/targets" class="btn">Targets</a> --}}
+        </div>
     </div>
 
     <div class="container">
@@ -151,5 +144,4 @@
     </div>
 
 </body>
-
 </html>
