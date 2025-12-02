@@ -920,10 +920,6 @@ function openEditAssignment(id) {
 }
 </script>
 
-
-
-
-
                 <script>
 
                     /* Utility to show toast */

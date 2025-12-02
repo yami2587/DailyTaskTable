@@ -51,9 +51,9 @@ class AdminController extends Controller
             ]);
         }
 
-        /* ----------------------------------------------------
+        /*
          * 3. Selected team (fallback to first team)
-         * ---------------------------------------------------- */
+        */
         $selectedTeamId = $r->team_id ?? $teams->first()->id;
 
         /* ----------------------------------------------------

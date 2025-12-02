@@ -121,7 +121,8 @@ Route::middleware(['admin.auth'])->group(function () {
     Route::get('/admin/team/{team}', [AdminController::class, 'team'])
         ->name('admin.team');
 
-
+    Route::post('/sheet/save_day/{sheet}', [DailySheetController::class, 'saveDayLog'])
+        ->name('sheet.save_day');
     // Teams (with member management)
     Route::resource('team', TeamController::class);
 
