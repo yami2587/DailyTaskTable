@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Model;
 
 class TeamDailyAssignment extends Model
@@ -9,6 +11,8 @@ class TeamDailyAssignment extends Model
     protected $fillable = [
         'sheet_id',
         'member_emp_id',
+        'member_name',           // backup name
+        'member_designation',
         'client_id',
         'task_description',
         'leader_remark',
@@ -29,6 +33,11 @@ class TeamDailyAssignment extends Model
     {
         return $this->belongsTo(TeamDailySheet::class, 'sheet_id');
     }
+    public function employee()
+{
+    return $this->belongsTo(Employee::class, 'member_emp_id', 'emp_id');
+}
+
 
     public function client()
     {

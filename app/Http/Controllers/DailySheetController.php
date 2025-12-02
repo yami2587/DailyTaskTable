@@ -22,15 +22,22 @@ class DailySheetController extends Controller
         $date          = $r->date ?? date('Y-m-d');
 
         // Check if user is a leader
-        $teamLeader = TeamMember::where('emp_id', $empId)
-            ->where('is_leader', true)
-            ->first();
+        // $teamLeader = TeamMember::where('emp_id', $empId)
+        //     ->where('is_leader', true)
+        //     ->first();
+$teamLeader = TeamMember::with('employee')
+    ->where('emp_id', $empId)
+    ->first();
+
+$isLeader = $teamLeader && $teamLeader->is_leader;
 
         // Load all clients
         $clients = Client::orderBy('client_company_name')->get();
 
         // MEMBER flow (non-leader)
-        if (!$teamLeader) {
+        // if (!$teamLeader) {
+        if (!$isLeader) {
+
 
             $memberTeam = TeamMember::where('emp_id', $empId)->first();
 
@@ -199,6 +206,9 @@ class DailySheetController extends Controller
 
         $sheet = TeamDailySheet::findOrFail($data['sheet_id']);
 
+    if (!$sheet) {
+        return response()->json(['error' => 'Sheet missing'], 422);
+    }
         if ($sheet->sheet_date < Carbon::today()) {
             return response()->json(['error' => 'Past sheets locked'], 422);
         }
@@ -216,6 +226,77 @@ class DailySheetController extends Controller
 
         return response()->json(['ok' => true, 'id' => $assign->id], 200);
     }
+    // public function assign(Request $request)
+    // {
+    //     $data = $request->validate([
+    //         'sheet_id'        => 'required|integer',
+    //         'member_emp_id'   => 'required|string',
+    //         'client_id'       => 'nullable|string',
+    //         'task_description' => 'nullable|string',
+    //         'leader_remark'   => 'nullable|string'
+    //     ]);
+
+    //     $sheet = TeamDailySheet::findOrFail($data['sheet_id']);
+
+    //     if ($sheet->sheet_date < Carbon::today()) {
+    //         return response()->json(['error' => 'Past sheets locked'], 422);
+    //     }
+
+    //     // LOAD EMPLOYEE FOR BACKUP
+    //     $emp = Employee::where('emp_id', $data['member_emp_id'])->first();
+
+    //     $assign = TeamDailyAssignment::create([
+    //         'sheet_id'           => $data['sheet_id'],
+    //         'member_emp_id'      => $data['member_emp_id'],
+
+    //         // BACKUP FIELDS — THE FIX
+    //         'member_name'        => $emp->emp_name ?? 'Unknown',
+    //         'member_designation' => $emp->emp_designation ?? null,
+
+    //         'client_id'          => $data['client_id'],
+    //         'task_description'   => $data['task_description'] ?? $data['leader_remark'],
+    //         'leader_remark'      => $data['leader_remark'],
+    //         'status'             => 'not_completed',
+    //         'member_remark'      => null,
+    //         'is_submitted'       => false
+    //     ]);
+
+    //     return response()->json(['ok' => true, 'id' => $assign->id], 200);
+    // }
+// public function assign(Request $request)
+// {
+//     $data = $request->validate([
+//         'sheet_id'         => 'required|integer',
+//         'member_emp_id'    => 'required|string',
+//         'client_id'        => 'nullable|string',
+//         'task_description' => 'nullable|string',
+//         'leader_remark'    => 'nullable|string'
+//     ]);
+
+//     $sheet = TeamDailySheet::find($data['sheet_id']);
+
+//     if (!$sheet) {
+//         return response()->json(['error' => 'Sheet missing'], 422);
+//     }
+
+//     if ($sheet->sheet_date < Carbon::today()) {
+//         return response()->json(['error' => 'Past sheets locked'], 422);
+//     }
+
+//     $assign = TeamDailyAssignment::create([
+//         'sheet_id'         => $data['sheet_id'],
+//         'member_emp_id'    => $data['member_emp_id'],
+//         // 'member_name'      => Employee::where('emp_id', $data['member_emp_id'])->value('emp_name'),
+//         'client_id'        => $data['client_id'],
+//         'task_description' => $data['task_description'] ?? $data['leader_remark'],
+//         'leader_remark'    => $data['leader_remark'],
+//         'status'           => 'not_completed',
+//         'member_remark'    => null,
+//         'is_submitted'     => false
+//     ]);
+
+//     return response()->json(['ok' => true, 'id' => $assign->id], 200);
+// }
 
     /* UPDATE ASSIGNMENT (unchanged) */
     public function updateAssignment(Request $request, TeamDailyAssignment $assign)

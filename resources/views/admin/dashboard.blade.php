@@ -478,7 +478,15 @@
                                                 <path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
                                             </svg>
                                         </div>
+                                        {{-- <div style="font-weight:600;">{{ $t->team_name }}</div> --}}
                                         <div style="font-weight:600;">{{ $t->team_name }}</div>
+
+@if(!empty($t->description))
+    <div class="small text-muted" style="max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+        {{ $t->description }}
+    </div>
+@endif
+
                                     </div>
                                     <div class="small text-muted">
                                         {{ \App\Models\TeamMember::where('team_id', $tid)->count() }} members
@@ -497,7 +505,12 @@
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div>
                                     <h5 style="margin:0;">Team: {{ $sheet->team->team_name ?? 'Team ' . $selectedTeamId }}</h5>
+                                    @if(!empty($sheet->team->description))
+    <div class="small text-muted">{{ $sheet->team->description }}</div>
+@endif
+
                                     <div class="small">Date: {{ \Carbon\Carbon::parse($date)->format('d M, Y') }}</div>
+
                                 </div>
 
                                 <div class="d-flex gap-2">
@@ -528,19 +541,41 @@
                                                 </div>
 
                                                 <div style="margin-left:6px; width:100%;">
-                                                    <div style="font-weight:700; display:flex; align-items:center; gap:8px;">
+                                                    {{-- <div style="font-weight:700; display:flex; align-items:center; gap:8px;">
                                                         <span>{{ $m->employee->emp_name ?? $m->emp_id }}</span>
                                                         @if ($m->is_leader)
                                                             <span class="small text-primary">— Leader</span>
                                                         @endif
 
-                                                        {{-- EX-MEMBER BADGE --}}
                                                         @if(!$date || \Carbon\Carbon::parse($date)->isPast())
                                                             @if(!$m->employee)
                                                                 <span class="badge bg-danger ms-1">Ex-Member</span>
                                                             @endif
                                                         @endif
-                                                    </div>
+                                                    </div> --}}
+                                                    @php
+    $displayName = $m->employee->emp_name
+        ?? \App\Models\TeamDailyAssignment::where('member_emp_id', $m->emp_id)
+            ->orderByDesc('id')
+            ->value('member_name')
+        ?? 'Unknown';
+@endphp
+
+<div style="font-weight:700; display:flex; align-items:center; gap:8px;">
+    <span>{{ $displayName }}</span>
+
+    @if ($m->is_leader)
+        <span class="small text-primary">— Leader</span>
+    @endif
+
+    {{-- EX-MEMBER BADGE --}}
+    @if(!$date || \Carbon\Carbon::parse($date)->isPast())
+        @if(!$m->employee)
+            <span class="badge bg-danger ms-1">Ex-Member</span>
+        @endif
+    @endif
+</div>
+
 
                                                     @if (!empty($m->employee->emp_designation ?? false))
                                                         <div class="small text-muted">{{ $m->employee->emp_designation }}</div>
@@ -617,17 +652,38 @@
                                                     <path fill-rule="evenodd" d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
                                                 </svg>
                                             </div>
-                                            <div>
+                                            {{-- Ex-member badge in assignments list when no employee relation exists (and date is
+                                            past) --}}
+                                            {{-- <div>
                                                 {{ $name }}
-                                                {{-- Ex-member badge in assignments list when no employee relation exists (and date is
-                                                past) --}}
                                                 @if(!$date || \Carbon\Carbon::parse($date)->isPast())
                                                     @if(!$mem || !$mem->employee)
                                                         <span class="badge bg-danger ms-1">Ex-Member</span>
                                                     @endif
                                                 @endif
                                                 <div class="small text-muted">{{ $rows->count() }} task(s)</div>
-                                            </div>
+                                            </div> --}}
+                                            {{-- @php
+    $displayName = optional($mem?->employee)->emp_name
+        ?? \App\Models\TeamDailyAssignment::where('member_emp_id', $memberId)
+            ->orderByDesc('id')
+            ->value('member_name')
+        ?? 'Unknown';
+@endphp --}}
+
+<div>
+    {{ $displayName }}
+
+    {{-- Ex-member badge --}}
+    @if(!$date || \Carbon\Carbon::parse($date)->isPast())
+        @if(!$mem || !$mem->employee)
+            <span class="badge bg-danger ms-1">Ex-Member</span>
+        @endif
+    @endif
+
+    <div class="small text-muted">{{ $rows->count() }} task(s)</div>
+</div>
+
                                         </div>
 
                                         @foreach ($rows as $a)
@@ -669,7 +725,7 @@
                             </div>
                         @endif
                     </div>
-                    {{-- TEAMS panel (list + inline actions). Note: Members button opens inline modal (no navigation). --}}
+                    {{-- TEAMS panel. Note: Members button opens inline modal (no navigation). --}}
                     <div class="pane fade-soft" id="panel-teams" style="display:none;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div style="font-weight:700;">All Teams</div>
@@ -902,28 +958,11 @@
         (function () {
             const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-            /*   
-               Utility: safe selectpicker init
-                  */
-            // function initSelectpicker(selector) {
-            //     const $el = $(selector);
-            //     try { $el.selectpicker('destroy'); } catch (e) { /**/ }
-            //     $el.selectpicker({
-            //         liveSearch: true,
-            //         liveSearchPlaceholder: "Search...",
-            //         noneResultsText: "No match found",
-            //         dropupAuto: false,
-            //         container: 'body',
-            //         size: 7
-            //     });
-            //     $el.selectpicker('refresh');
-            // }
+          
 
             /* initialize static selects on page load */
             document.addEventListener('DOMContentLoaded', () => {
                 // initSelectpicker('.selectpicker');
-
-                // Tab click behavior (keeps UI exactly same)
                 document.querySelectorAll('.tab-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
@@ -1011,94 +1050,72 @@
             /* Create Team modal*/
             window.openCreateTeamModal = function () { showModal('createTeamModal'); };
 
-            // window.openManageMembersModal = async function (teamId, focusMembersList = false) {
-            //     if (!teamId) {
-            //         alert('Team id missing');
-            //         return;
-            //     }
+            window.openManageMembersModal = async function (teamId, focusMembersList = false) {
+                if (!teamId) {
+                    alert('Team id missing');
+                    return;
+                }
 
-            //     // set hidden team id early (fallback)
-            //     document.getElementById('addMemberTeamId').value = teamId;
-            //     document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
+                // set hidden team id early (fallback)
+                document.getElementById('addMemberTeamId').value = teamId;
+                document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
 
-            //     try {
-            //         const res = await fetch('/team/' + teamId + '/members', { headers: { 'Accept': 'application/json' } });
-            //         if (!res.ok) throw new Error('Failed to fetch team data');
-            //         const json = await res.json();
+                try {
+                    const res = await fetch('/team/' + teamId + '/members', { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) throw new Error('Failed to fetch team data');
+                    const json = await res.json();
 
-            //         // team name
-            //         document.getElementById('manageModalTeamName').innerText = json.team?.team_name ?? '';
+                    // team name
+                    document.getElementById('manageModalTeamName').innerText = json.team?.team_name ?? '';
 
-            //         // members list (clear + append)
-            //         const membersArea = document.getElementById('membersListArea');
-            //         membersArea.innerHTML = '';
-            //         (json.members || []).forEach(m => {
-            //             const div = document.createElement('div');
-            //             div.className = 'd-flex align-items-center justify-content-between mb-2';
-            //             const left = document.createElement('div');
-            //             left.innerHTML = `<div style="font-weight:700;">${m.employee_name ?? m.emp_id} ${((!m.employee && (!('{{$date}}') || new Date('${$date}').getTime() < Date.now())) ? '<span class="badge bg-danger ms-1">Ex-Member</span>' : '')}</div>
-            //                               <div class="small text-muted">${m.is_leader ? 'Leader' : ''}</div>`;
-            //             const form = document.createElement('form');
-            //             form.method = 'POST';
-            //             form.className = 'remove-member-form';
-            //             form.action = '/team/' + teamId + '/members/' + m.id;
-            //             form.innerHTML = `<input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="_method" value="DELETE"><button class="btn btn-outline-danger btn-sm">Remove</button>`;
-            //             div.appendChild(left);
-            //             div.appendChild(form);
-            //             membersArea.appendChild(div);
-            //         });
+                    // members list (clear + append)
+                    const membersArea = document.getElementById('membersListArea');
+                    membersArea.innerHTML = '';
+                    (json.members || []).forEach(m => {
+                        const div = document.createElement('div');
+                        div.className = 'd-flex align-items-center justify-content-between mb-2';
+                        const left = document.createElement('div');
+                        left.innerHTML = `<div style="font-weight:700;">${m.employee_name ?? m.emp_id} ${((!m.employee && (!('{{$date}}') || new Date('${$date}').getTime() < Date.now())) ? '<span class="badge bg-danger ms-1">Ex-Member</span>' : '')}</div>
+                                          <div class="small text-muted">${m.is_leader ? 'Leader' : ''}</div>`;
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.className = 'remove-member-form';
+                        form.action = '/team/' + teamId + '/members/' + m.id;
+                        form.innerHTML = `<input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="_method" value="DELETE"><button class="btn btn-outline-danger btn-sm">Remove</button>`;
+                        div.appendChild(left);
+                        div.appendChild(form);
+                        membersArea.appendChild(div);
+                    });
 
-            //         // employees list -> dropdown
-            //         refreshMemberDropdown(json.employees || []);
+                    // employees list -> dropdown
+                    refreshMemberDropdown(json.employees || []);
 
-            //         // show modal
-            //         showModal('manageMembersModal');
+                    // show modal
+                    showModal('manageMembersModal');
 
-            //         // re-wire remove forms inside modal (delegated below also handles it)
-            //     } catch (err) {
-            //         // fallback: show modal with server-rendered content
-            //         document.getElementById('addMemberTeamId').value = teamId;
-            //         document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
-            //         showModal('manageMembersModal');
-            //         console.warn('openManageMembersModal error:', err);
-            //     }
-            // };
+                    // re-wire remove forms inside modal (delegated below also handles it)
+                } catch (err) {
+                    // fallback: show modal with server-rendered content
+                    document.getElementById('addMemberTeamId').value = teamId;
+                    document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
+                    showModal('manageMembersModal');
+                    console.warn('openManageMembersModal error:', err);
+                }
+            };
 
-            // /* Refresh employee dropdown (AJAX helper)   */
-            // function refreshMemberDropdown(list) {
-            //     const $select = $('#addMemberSelect');
-            //     $select.empty();
-            //     $select.append(`<option value="">-- choose employee --</option>`);
-            //     list.forEach(e => {
-            //         $select.append(`<option value="${e.emp_id}">${e.emp_name} (${e.emp_id})</option>`);
-            //     });
-            //     initSelectpicker('#addMemberSelect');
-            // }
+            /* Refresh employee dropdown (AJAX helper)   */
+            function refreshMemberDropdown(list) {
+                const $select = $('#addMemberSelect');
+                $select.empty();
+                $select.append(`<option value="">-- choose employee --</option>`);
+                list.forEach(e => {
+                    $select.append(`<option value="${e.emp_id}">${e.emp_name} (${e.emp_id})</option>`);
+                });
+                initSelectpicker('#addMemberSelect');
+            }
 
-            /* Ensure selectpicker works inside modal when it opens */
-            // $('#manageMembersModal').on('shown.bs.modal', function () {
-            //     initSelectpicker('#addMemberSelect');
-            // });
-            /* FIXED: Make the search input clickable + focus */
-            // $('#manageMembersModal').on('shown.bs.modal', function () {
-            //     setTimeout(() => {
-            //         $('#addMemberSelect')
-            //             .selectpicker('destroy')
-            //             .selectpicker({
-            //                 liveSearch: true,
-            //                 dropupAuto: false,
-            //                 container: 'body',   // THIS FIXES THE TRAPPING
-            //                 size: 7
-            //             });
-
-            //         $('.bs-searchbox input').focus();
-            //     }, 150);
-            // });
-
-
-            /*  
-               Add member form: set action based on hidden team id (guard)
-                 */
+                       
+            /* Add member form: set action based on hidden team id (guard)  */
             document.getElementById('addMemberForm')?.addEventListener('submit', function (ev) {
                 const teamId = document.getElementById('addMemberTeamId').value;
                 if (!teamId) { ev.preventDefault(); alert('Team not selected'); return false; }
@@ -1154,10 +1171,7 @@
 
             
         })();
-        /* ============================================================
-CUSTOM SEARCH DROPDOWN — REPLACES BOOTSTRAP-SELECT
-Fully works inside modals, supports scrolling, never breaks
-============================================================ */
+        /* CUSTOM SEARCH DROPDOW */
 
 window.openManageMembersModal = function(teamId) {
     if (!teamId) { alert("Team ID missing!"); return; }
