@@ -317,52 +317,67 @@
             animation: fadeSoft .22s ease both;
         }
 
-        /* Fix for bootstrap-select search inside modal: ensure dropdown and search input are on top and clickable */
-        /* .bootstrap-select .dropdown-menu {
-      z-index: 3005 !important;
-      pointer-events: auto !important;
+ 
+/*  */
+@media (max-width: 576px) {
+    #manageMembersModal .modal-dialog {
+        max-width: 95%;
+        margin: 10px auto;
     }
 
-    .bootstrap-select .bs-searchbox input {
-      z-index: 3010 !important;
-      pointer-events: auto !important;
+    #manageMembersModal .modal-body {
+        padding: 10px;
     }
 
-    .bootstrap-select .dropdown-menu,
-    .bootstrap-select .bs-searchbox input {
-      transition: box-shadow .12s ease;
-    } */
+    #manageMembersModal .row {
+        flex-direction: column;
+    }
 
-        /* BOOSTRAP-SELECT FIX FOR MODALS */
+    #manageMembersModal .col-md-6 {
+        width: 100%;
+    }
+}
 
-        /* Force dropdown to escape modal scroll */
-        .bootstrap-select .dropdown-menu.show {
-            position: fixed !important;
-            top: auto !important;
-            left: auto !important;
-            z-index: 99999 !important;
-            transform: translate3d(0, 0, 0) !important;
-        }
 
-        /* Search box must be clickable */
-        .bs-searchbox input {
-            pointer-events: auto !important;
-            z-index: 100000 !important;
-            position: relative !important;
-        }
+.custom-search-wrapper {
+    position: relative;
+    width: 100%;
+}
 
-        /* Prevent the parent modal from blocking clicks */
-        .modal-dialog,
-        .modal-content,
-        .modal-body {
-            overflow: visible !important;
-        }
+.custom-search-input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+}
 
-        /* Ensure dropdown is above EVERYTHING */
-        .bootstrap-select {
-            z-index: 99990 !important;
-            position: relative !important;
-        }
+.custom-search-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    border-radius: 6px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    z-index: 999999 !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+
+.custom-search-item {
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.custom-search-item:hover {
+    background: #eef2ff;
+}
+.custom-search-list {
+    transition: all .15s ease;
+}
+
     </style>
 
     <div class="admin-wrap fade-soft">
@@ -519,7 +534,7 @@
                                                             <span class="small text-primary">— Leader</span>
                                                         @endif
 
-                                                        {{-- EX-MEMBER BADGE:  --}}
+                                                        {{-- EX-MEMBER BADGE --}}
                                                         @if(!$date || \Carbon\Carbon::parse($date)->isPast())
                                                             @if(!$m->employee)
                                                                 <span class="badge bg-danger ms-1">Ex-Member</span>
@@ -810,7 +825,7 @@
                                 <input type="hidden" name="team_id" id="addMemberTeamId" value="">
                                 <div class="mb-2">
                                     <label class="small">Employee</label>
-                                    <select name="emp_id" id="addMemberSelect" class="selectpicker form-control"
+                                    {{-- <select name="emp_id" id="addMemberSelect" class="selectpicker form-control"
                                         data-live-search="true" data-dropup-auto="false" data-container="body"
                                         title="Search employee..." data-size="7" required>
 
@@ -818,7 +833,9 @@
                                         @foreach ($employees as $e)
                                             <option value="{{ $e->emp_id }}">{{ $e->emp_name }} ({{ $e->emp_id }})</option>
                                         @endforeach
-                                    </select>
+                                    </select> --}}
+                                    <div id="customEmployeeDropdown"></div>
+
                                 </div>
 
                                 <div class="mb-2">
@@ -888,23 +905,23 @@
             /*   
                Utility: safe selectpicker init
                   */
-            function initSelectpicker(selector) {
-                const $el = $(selector);
-                try { $el.selectpicker('destroy'); } catch (e) { /**/ }
-                $el.selectpicker({
-                    liveSearch: true,
-                    liveSearchPlaceholder: "Search...",
-                    noneResultsText: "No match found",
-                    dropupAuto: false,
-                    container: 'body',
-                    size: 7
-                });
-                $el.selectpicker('refresh');
-            }
+            // function initSelectpicker(selector) {
+            //     const $el = $(selector);
+            //     try { $el.selectpicker('destroy'); } catch (e) { /**/ }
+            //     $el.selectpicker({
+            //         liveSearch: true,
+            //         liveSearchPlaceholder: "Search...",
+            //         noneResultsText: "No match found",
+            //         dropupAuto: false,
+            //         container: 'body',
+            //         size: 7
+            //     });
+            //     $el.selectpicker('refresh');
+            // }
 
             /* initialize static selects on page load */
             document.addEventListener('DOMContentLoaded', () => {
-                initSelectpicker('.selectpicker');
+                // initSelectpicker('.selectpicker');
 
                 // Tab click behavior (keeps UI exactly same)
                 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -942,7 +959,7 @@
                 setTimeout(() => el.classList.remove('fade-in'), 300);
             }
 
-            /* Open / fill Edit Team modal */
+            // /* Open / fill Edit Team modal */
             window.openEditTeamModal = function (id, name, desc) {
                 const form = document.getElementById('editTeamForm');
                 form.action = '/team/' + id;
@@ -955,7 +972,7 @@
                 showModal('editTeamModal');
             };
 
-            /* Delete modal helper */
+            // /* Delete modal helper */
             window.openDeleteTeamModal = function (id, name) {
                 const form = document.getElementById('deleteTeamForm');
                 form.action = '/team/' + id;
@@ -984,99 +1001,99 @@
                     }
                 });
             })();
-            $('#manageMembersModal').on('shown.bs.modal', function () {
-                setTimeout(() => {
-                    initSelectpicker('#addMemberSelect');   // rebuild dropdown
-                    $('.bs-searchbox input').focus();
-                }, 200);
-            });
+            // $('#manageMembersModal').on('shown.bs.modal', function () {
+            //     setTimeout(() => {
+            //         initSelectpicker('#addMemberSelect');   // rebuild dropdown
+            //         $('.bs-searchbox input').focus();
+            //     }, 200);
+            // });
 
             /* Create Team modal*/
             window.openCreateTeamModal = function () { showModal('createTeamModal'); };
 
-            window.openManageMembersModal = async function (teamId, focusMembersList = false) {
-                if (!teamId) {
-                    alert('Team id missing');
-                    return;
-                }
+            // window.openManageMembersModal = async function (teamId, focusMembersList = false) {
+            //     if (!teamId) {
+            //         alert('Team id missing');
+            //         return;
+            //     }
 
-                // set hidden team id early (fallback)
-                document.getElementById('addMemberTeamId').value = teamId;
-                document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
+            //     // set hidden team id early (fallback)
+            //     document.getElementById('addMemberTeamId').value = teamId;
+            //     document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
 
-                try {
-                    const res = await fetch('/team/' + teamId + '/members', { headers: { 'Accept': 'application/json' } });
-                    if (!res.ok) throw new Error('Failed to fetch team data');
-                    const json = await res.json();
+            //     try {
+            //         const res = await fetch('/team/' + teamId + '/members', { headers: { 'Accept': 'application/json' } });
+            //         if (!res.ok) throw new Error('Failed to fetch team data');
+            //         const json = await res.json();
 
-                    // team name
-                    document.getElementById('manageModalTeamName').innerText = json.team?.team_name ?? '';
+            //         // team name
+            //         document.getElementById('manageModalTeamName').innerText = json.team?.team_name ?? '';
 
-                    // members list (clear + append)
-                    const membersArea = document.getElementById('membersListArea');
-                    membersArea.innerHTML = '';
-                    (json.members || []).forEach(m => {
-                        const div = document.createElement('div');
-                        div.className = 'd-flex align-items-center justify-content-between mb-2';
-                        const left = document.createElement('div');
-                        left.innerHTML = `<div style="font-weight:700;">${m.employee_name ?? m.emp_id} ${((!m.employee && (!('{{$date}}') || new Date('${$date}').getTime() < Date.now())) ? '<span class="badge bg-danger ms-1">Ex-Member</span>' : '')}</div>
-                                          <div class="small text-muted">${m.is_leader ? 'Leader' : ''}</div>`;
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.className = 'remove-member-form';
-                        form.action = '/team/' + teamId + '/members/' + m.id;
-                        form.innerHTML = `<input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="_method" value="DELETE"><button class="btn btn-outline-danger btn-sm">Remove</button>`;
-                        div.appendChild(left);
-                        div.appendChild(form);
-                        membersArea.appendChild(div);
-                    });
+            //         // members list (clear + append)
+            //         const membersArea = document.getElementById('membersListArea');
+            //         membersArea.innerHTML = '';
+            //         (json.members || []).forEach(m => {
+            //             const div = document.createElement('div');
+            //             div.className = 'd-flex align-items-center justify-content-between mb-2';
+            //             const left = document.createElement('div');
+            //             left.innerHTML = `<div style="font-weight:700;">${m.employee_name ?? m.emp_id} ${((!m.employee && (!('{{$date}}') || new Date('${$date}').getTime() < Date.now())) ? '<span class="badge bg-danger ms-1">Ex-Member</span>' : '')}</div>
+            //                               <div class="small text-muted">${m.is_leader ? 'Leader' : ''}</div>`;
+            //             const form = document.createElement('form');
+            //             form.method = 'POST';
+            //             form.className = 'remove-member-form';
+            //             form.action = '/team/' + teamId + '/members/' + m.id;
+            //             form.innerHTML = `<input type="hidden" name="_token" value="${csrf}"><input type="hidden" name="_method" value="DELETE"><button class="btn btn-outline-danger btn-sm">Remove</button>`;
+            //             div.appendChild(left);
+            //             div.appendChild(form);
+            //             membersArea.appendChild(div);
+            //         });
 
-                    // employees list -> dropdown
-                    refreshMemberDropdown(json.employees || []);
+            //         // employees list -> dropdown
+            //         refreshMemberDropdown(json.employees || []);
 
-                    // show modal
-                    showModal('manageMembersModal');
+            //         // show modal
+            //         showModal('manageMembersModal');
 
-                    // re-wire remove forms inside modal (delegated below also handles it)
-                } catch (err) {
-                    // fallback: show modal with server-rendered content
-                    document.getElementById('addMemberTeamId').value = teamId;
-                    document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
-                    showModal('manageMembersModal');
-                    console.warn('openManageMembersModal error:', err);
-                }
-            };
+            //         // re-wire remove forms inside modal (delegated below also handles it)
+            //     } catch (err) {
+            //         // fallback: show modal with server-rendered content
+            //         document.getElementById('addMemberTeamId').value = teamId;
+            //         document.getElementById('addMemberForm').action = '/team/' + teamId + '/members';
+            //         showModal('manageMembersModal');
+            //         console.warn('openManageMembersModal error:', err);
+            //     }
+            // };
 
-            /* Refresh employee dropdown (AJAX helper)   */
-            function refreshMemberDropdown(list) {
-                const $select = $('#addMemberSelect');
-                $select.empty();
-                $select.append(`<option value="">-- choose employee --</option>`);
-                list.forEach(e => {
-                    $select.append(`<option value="${e.emp_id}">${e.emp_name} (${e.emp_id})</option>`);
-                });
-                initSelectpicker('#addMemberSelect');
-            }
+            // /* Refresh employee dropdown (AJAX helper)   */
+            // function refreshMemberDropdown(list) {
+            //     const $select = $('#addMemberSelect');
+            //     $select.empty();
+            //     $select.append(`<option value="">-- choose employee --</option>`);
+            //     list.forEach(e => {
+            //         $select.append(`<option value="${e.emp_id}">${e.emp_name} (${e.emp_id})</option>`);
+            //     });
+            //     initSelectpicker('#addMemberSelect');
+            // }
 
             /* Ensure selectpicker works inside modal when it opens */
             // $('#manageMembersModal').on('shown.bs.modal', function () {
             //     initSelectpicker('#addMemberSelect');
             // });
             /* FIXED: Make the search input clickable + focus */
-            $('#manageMembersModal').on('shown.bs.modal', function () {
-                setTimeout(() => {
-                    $('#addMemberSelect')
-                        .selectpicker('destroy')
-                        .selectpicker({
-                            liveSearch: true,
-                            dropupAuto: false,
-                            container: 'body',   // THIS FIXES THE TRAPPING
-                            size: 7
-                        });
+            // $('#manageMembersModal').on('shown.bs.modal', function () {
+            //     setTimeout(() => {
+            //         $('#addMemberSelect')
+            //             .selectpicker('destroy')
+            //             .selectpicker({
+            //                 liveSearch: true,
+            //                 dropupAuto: false,
+            //                 container: 'body',   // THIS FIXES THE TRAPPING
+            //                 size: 7
+            //             });
 
-                    $('.bs-searchbox input').focus();
-                }, 150);
-            });
+            //         $('.bs-searchbox input').focus();
+            //     }, 150);
+            // });
 
 
             /*  
@@ -1089,11 +1106,7 @@
                 // let standard form submit do the rest (server-side redirect will refresh view)
             });
 
-            /*  
-               Delegated handler: remove member forms inside modal
-               - submits via normal POST/DELETE (fallback server)
-               - optionally could be AJAX-enhanced later
-                 */
+          
             document.getElementById('membersListArea')?.addEventListener('submit', function (ev) {
                 if (ev.target && ev.target.classList.contains('remove-member-form')) {
                     // allow default submit (server handles)
@@ -1138,7 +1151,113 @@
             } else {
                 window._adminDashboardInitialized = true;
             }
+
+            
         })();
+        /* ============================================================
+CUSTOM SEARCH DROPDOWN — REPLACES BOOTSTRAP-SELECT
+Fully works inside modals, supports scrolling, never breaks
+============================================================ */
+
+window.openManageMembersModal = function(teamId) {
+    if (!teamId) { alert("Team ID missing!"); return; }
+
+    // Set team ID before modal opens
+    document.getElementById("addMemberTeamId").value = teamId;
+    document.getElementById("addMemberForm").action = "/team/" + teamId + "/members";
+
+    // Load modal
+    const modal = new bootstrap.Modal(document.getElementById("manageMembersModal"));
+    modal.show();
+
+    // Build dropdown AFTER modal has animated open
+    setTimeout(() => {
+        fetch("/team/" + teamId + "/members", { headers: { "Accept": "application/json" } })
+            .then(r => r.json())
+            .then(json => {
+                renderCustomDropdown(json.employees);
+            })
+            .catch(() => renderCustomDropdown(window.serverEmployees));
+    }, 200);
+};
+
+
+function renderCustomDropdown(list) {
+    const box = document.getElementById("customEmployeeDropdown");
+    box.innerHTML = `
+        <div class="custom-search-wrapper">
+            <input type="text" id="empSearchInput" class="custom-search-input"
+                placeholder="Search employee..." autocomplete="off">
+            <div id="empSearchList" class="custom-search-list" style="display:none; opacity:0; transform:translateY(5px);"></div>
+        </div>
+        <input type="hidden" id="addMemberHiddenInput" name="emp_id">
+    `;
+
+    const inp = document.getElementById("empSearchInput");
+    const listBox = document.getElementById("empSearchList");
+    const hidden = document.getElementById("addMemberHiddenInput");
+
+    function openList() {
+        listBox.style.display = "block";
+        setTimeout(() => {
+            listBox.style.opacity = "1";
+            listBox.style.transform = "translateY(0)";
+        }, 10);
+    }
+
+    function closeList() {
+        listBox.style.opacity = "0";
+        listBox.style.transform = "translateY(5px)";
+        setTimeout(() => listBox.style.display = "none", 150);
+    }
+
+    function filterList(v) {
+        listBox.innerHTML = "";
+        const q = v.toLowerCase();
+
+        list.filter(e => e.emp_name.toLowerCase().includes(q)).forEach(e => {
+            const row = document.createElement("div");
+            row.className = "custom-search-item";
+            row.innerText = `${e.emp_name} (${e.emp_id})`;
+            row.onclick = () => {
+                inp.value = `${e.emp_name} (${e.emp_id})`;
+                hidden.value = e.emp_id;
+                closeList();
+            };
+            listBox.appendChild(row);
+        });
+
+        openList();
+    }
+
+    inp.addEventListener("focus", () => filterList(inp.value));
+    inp.addEventListener("click", () => filterList(inp.value));
+    inp.addEventListener("keyup", () => filterList(inp.value));
+
+    document.addEventListener("click", e => {
+        if (!box.contains(e.target)) closeList();
+    });
+}
+
+
+/* When modal opens → rebuild custom dropdown */
+// $('#manageMembersModal').on('shown.bs.modal', function () {
+// fetch('/team/' + document.getElementById('addMemberTeamId').value + '/members', {
+//     headers: { 'Accept': 'application/json' }
+// })
+// .then(res => res.json())
+// .then(data => {
+//     renderCustomDropdown(data.employees);
+// })
+// .catch(() => {
+//     console.warn("Fallback: using server-side employees");
+//     renderCustomDropdown(window.serverEmployees ?? []);
+// });
+// });
+
+window.serverEmployees = @json($employees);
+
+
     </script>
 
 @endsection
